@@ -149,6 +149,29 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Post, body);
         }
 
+        [HttpGet("GetTransactions")]
+        public async Task<string> GetTransactions()
+        {
+            JsonElement EmptyJson = new JsonElement();
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.Transactions, ApiMethods.Get, EmptyJson);
+        }
+
+        [HttpGet("GetInternalWallets")]
+        public async Task<string> GetInternalWallets()
+        {
+            JsonElement EmptyJson = new JsonElement();
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.InternalWallets, ApiMethods.Get, EmptyJson);
+        }
+
+        [HttpGet("GetExternalWallets")]
+        public async Task<string> GetExternalWallets()
+        {
+            JsonElement EmptyJson = new JsonElement();
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Get, EmptyJson);
+        }
 
         public static DateTime GetUTCDateTime()
         {
