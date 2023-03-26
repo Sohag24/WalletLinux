@@ -173,6 +173,125 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Get, EmptyJson);
         }
 
+        // POST api/<WalletController>
+        [HttpPost("CreateInternalWallet")]
+        public async Task<string> CreateInternalWallet([FromBody] JsonElement body)
+        {
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.InternalWallets, ApiMethods.Post, body);
+        }
+
+        // POST api/<WalletController>
+        [HttpPost("CreateExternalWallet")]
+        public async Task<string> CreateExternalWallet([FromBody] JsonElement body)
+        {
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Post, body);
+        }
+
+        // POST api/<WalletController>
+        [HttpPost("CreateContracts")]
+        public async Task<string> CreateContracts([FromBody] JsonElement body)
+        {
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.Contracts, ApiMethods.Post, body);
+        }
+
+
+        // POST api/<WalletController>
+        [HttpPost("AddAssetsInternalWallet")]
+        public async Task<string> AddAssetsInternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.InternalWallets + "/" + data.walletId + "/" + data.assetId;
+            string? address = data.address;
+
+            JsonElement newBody = new JsonElement();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (Utf8JsonWriter writer = new Utf8JsonWriter(stream))
+                {
+                    writer.WriteStartObject();
+
+                    writer.WriteString("address", address);
+
+                    writer.WriteEndObject();
+                }
+
+                byte[] json = stream.ToArray();
+                JsonDocument document = JsonDocument.Parse(json);
+                newBody = document.RootElement;
+            }
+
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, newBody);
+        }
+
+
+        // POST api/<WalletController>
+        [HttpPost("AddAssetsExternalWallet")]
+        public async Task<string> AddAssetsExternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.ExternalWallets + "/" + data.walletId + "/" + data.assetId;
+            string? address = data.address;
+
+            JsonElement newBody = new JsonElement();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (Utf8JsonWriter writer = new Utf8JsonWriter(stream))
+                {
+                    writer.WriteStartObject();
+
+                    writer.WriteString("address", address);
+
+                    writer.WriteEndObject();
+                }
+
+                byte[] json = stream.ToArray();
+                JsonDocument document = JsonDocument.Parse(json);
+                newBody = document.RootElement;
+            }
+
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, newBody);
+        }
+
+        // POST api/<WalletController>
+        [HttpPost("AddAssetsContract")]
+        public async Task<string> AddAssetsContract([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Contracts + "/" + data.walletId + "/" + data.assetId;
+            string? address = data.address;
+
+            JsonElement newBody = new JsonElement();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (Utf8JsonWriter writer = new Utf8JsonWriter(stream))
+                {
+                    writer.WriteStartObject();
+
+                    writer.WriteString("address", address);
+
+                    writer.WriteEndObject();
+                }
+
+                byte[] json = stream.ToArray();
+                JsonDocument document = JsonDocument.Parse(json);
+                newBody = document.RootElement;
+            }
+
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, newBody);
+        }
+
         public static DateTime GetUTCDateTime()
         {
             var httpClient = new HttpClient();
