@@ -9,7 +9,8 @@
         public const string InternalWallets = "/v1/internal_wallets";
         public const string ExternalWallets = "/v1/external_wallets";
         public const string Contracts = "/v1/contracts";
-        
+        public const string Transaction = "/v1/transactions";
+
 
     }
 

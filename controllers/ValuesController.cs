@@ -292,6 +292,14 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Post, newBody);
         }
 
+        // POST api/<WalletController>
+        [HttpPost("transactions")]
+        public async Task<string> transactions([FromBody] JsonElement body)
+        {
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+        }
+
         public static DateTime GetUTCDateTime()
         {
             var httpClient = new HttpClient();
