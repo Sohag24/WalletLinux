@@ -173,6 +173,14 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Get, EmptyJson);
         }
 
+        [HttpGet("GetContracts")]
+        public async Task<string> GetContracts()
+        {
+            JsonElement EmptyJson = new JsonElement();
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.Contracts, ApiMethods.Get, EmptyJson);
+        }
+
         // POST api/<WalletController>
         [HttpPost("CreateInternalWallet")]
         public async Task<string> CreateInternalWallet([FromBody] JsonElement body)
