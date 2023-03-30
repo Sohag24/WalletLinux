@@ -60,7 +60,7 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
         }
 
-        // POST api/<WalletController>
+        // GET api/<WalletController>
         [HttpPost("GetVaultsByVaultId")]
         public async Task<string> GetVaultsByVaultId([FromBody] JsonElement body)
         {
@@ -299,6 +299,23 @@ namespace WebApplication2.controllers
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(endPoint, ApiMethods.Post, newBody);
         }
+
+
+        // POST api/<WalletController>
+        [HttpPost("GetAssetDepositAddress")]
+        public async Task<string> GetAssetDepositAddress([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.VaultCreate + "/" + data.vaultId + "/" + data.assetId+ "/addresses";
+            string? eosAccountName = data.eosAccountName;
+
+            JsonElement EmptyJson = new JsonElement();
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+        }
+
 
         // POST api/<WalletController>
         [HttpPost("transactions")]
