@@ -97,7 +97,7 @@ public class JwtGenerator
         var httpClient = new HttpClient();
 
         // Set the URL of the World Time API endpoint
-        var apiUrl = "http://worldtimeapi.org/api/timezone/Asia/Dhaka";
+        var apiUrl = "http://worldtimeapi.org/api/timezone/Asia/Dhaka"; // Change
 
         // Send an HTTP GET request to the API endpoint and get the response
         var response =  httpClient.GetAsync(apiUrl).Result;
@@ -105,7 +105,7 @@ public class JwtGenerator
         // Read the response content as a string
         var responseContent = response.Content.ReadAsStringAsync().Result;
 
-        var jsonObject = JObject.Parse(responseContent);
+        var jsonObject = JObject.Parse(responseContent); 
 
         // Get the value of the "name" variable as a string
         var utc_datetime =(DateTime)jsonObject["utc_datetime"];
