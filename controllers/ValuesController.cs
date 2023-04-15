@@ -138,6 +138,17 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Post, body);
         }
 
+        [HttpPost("SetAutoFuel")]
+        public async Task<string> SetAutoFuel([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.VaultCreate + "/" + data.vaultAccountId + "/set_auto_fuel";
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
+        }
+
         [HttpPost("Activate")]
         public async Task<string> Activate([FromBody] JsonElement body)
         {

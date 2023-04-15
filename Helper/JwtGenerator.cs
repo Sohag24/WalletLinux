@@ -107,13 +107,15 @@ public class JwtGenerator
         var responseContent = response.Content.ReadAsStringAsync().Result;
 
         var jsonObject = JObject.Parse(responseContent); 
-        */
+        
         // Get the value of the "name" variable as a string
-        var utc_datetime = DateTime.UtcNow; //(DateTime)jsonObject["utc_datetime"];
-
+        var utc_datetime = (DateTime)jsonObject["utc_datetime"];
+        */
 
         // Parse the response JSON to get the current UTC datetime
         //var dateTimeUtc = JsonConvert.DeserializeObject<string>(responseContent);
+
+        var utc_datetime = DateTime.UtcNow;
 
         return utc_datetime;
 
