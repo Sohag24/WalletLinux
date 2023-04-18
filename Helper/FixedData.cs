@@ -1,4 +1,4 @@
-﻿namespace WebApplication2.Helper
+﻿namespace WalletApp.Helper
 {
     public static class EndPoints
     {

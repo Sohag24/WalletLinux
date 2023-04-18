@@ -1,8 +1,8 @@
-﻿//using WalletApp.Model;
+﻿
 
-using WebApplication2.Model;
+using WalletApp.Model;
 
-namespace WebApplication2.Helper
+namespace WalletApp.Helper
 {
     public class Configuration
     {

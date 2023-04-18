@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Text.Json;
-using WebApplication2.Helper;
+using WalletApp.Helper;
 
 namespace WebApplication2.controllers
 {

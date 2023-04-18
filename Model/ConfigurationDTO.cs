@@ -1,4 +1,4 @@
-﻿namespace WebApplication2.Model
+﻿namespace WalletApp.Model
 {
     public class ConfigurationDTO
     {

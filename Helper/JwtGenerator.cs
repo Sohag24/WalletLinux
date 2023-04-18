@@ -5,8 +5,7 @@ using System.Text;
 //using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
-using WebApplication2.Helper;
-//using WebApplication2.Migrations;
+using WalletApp.Helper;
 
 public class JwtGenerator
 {

@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using WebApplication2.Helper;
-using WebApplication2.Model;
-//using WebApplication2.Model;
+using WalletApp.Helper;
+using WalletApp.Model;
 
-namespace WebApplication2.Helper
+
+namespace WalletApp.Helper
 {
     public  class FireBlocks_GateWay
     {
