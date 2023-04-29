@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using WalletApp.Helper;
+using WalletApp.Model;
 
 namespace WebApplication2.controllers
 {
@@ -14,9 +18,11 @@ namespace WebApplication2.controllers
     public class ValuesController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        public ValuesController(IConfiguration configuration)
+        private readonly DBClass _dbContext;
+        public ValuesController(IConfiguration configuration, DBClass dbContext)
         {
             _configuration = configuration;
+            _dbContext = dbContext; 
         }
 
         [AllowAnonymous]
@@ -49,7 +55,25 @@ namespace WebApplication2.controllers
         public async Task<string> CreateVault([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            return await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
+            var response= await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
+
+
+            // Add Vault Info . . .
+            try
+            {
+                dynamic responseData = JObject.Parse(response);
+                int VaultId = responseData.id;
+
+                string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+                dynamic data = JObject.Parse(BodyStr);
+
+                var newVault = new VaultInfo() { VaultId = VaultId, Tag = data.tag, Category = data.category };
+                var VaultRepository = new Repository<VaultInfo>(_dbContext);
+                var savedUser = await VaultRepository.SaveAsync(newVault);
+            }
+            catch (Exception ex) { }
+
+            return response.ToString();
         }
 
         [HttpGet("GetVaults")]
@@ -73,6 +97,35 @@ namespace WebApplication2.controllers
 
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+        }
+
+        // GET api/<WalletController>
+        [HttpPost("GetVaultInfo")]
+        public IActionResult GetVaultInfo([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            int VaultId = data.vaultId;
+
+            var vaultRepository = new Repository<VaultInfo>(_dbContext);
+            var VaultInfo = vaultRepository.GetAllAsync().Result;
+            var Vault = VaultInfo.Where(a => a.VaultId == VaultId).FirstOrDefault();
+
+            if(Vault==null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return Ok(new
+                {
+                    VaultId = Vault.VaultId,
+                    Tag = Vault.Tag,
+                    Category = Vault.Category
+                });
+            }
+
+            
         }
 
         // Get api/<WalletController>

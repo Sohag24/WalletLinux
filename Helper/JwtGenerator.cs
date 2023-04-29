@@ -97,7 +97,7 @@ public class JwtGenerator
         var httpClient = new HttpClient();
 
         // Set the URL of the World Time API endpoint
-        var apiUrl = "https://worldtimeapi.org/api/timezone/Asia/Dhaka"; // Change
+        var apiUrl = "http://worldtimeapi.org/api/timezone/Asia/Dhaka"; // Change
 
         // Send an HTTP GET request to the API endpoint and get the response
         var response =  httpClient.GetAsync(apiUrl).Result;
