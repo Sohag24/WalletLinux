@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public int VaultId { get; set; }
-        public string Tag { get; set; }
-        public string Category { get; set; }
+        public int Tag { get; set; }
+        public int Category { get; set; }
     }
 }

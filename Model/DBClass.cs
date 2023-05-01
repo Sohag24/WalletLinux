@@ -8,5 +8,7 @@ namespace WalletApp.Model
       : base(options)
         { }
         public DbSet<VaultInfo> VaultInfo { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<Category> Categories { get; set; }
     }
 }

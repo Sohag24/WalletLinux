@@ -22,7 +22,7 @@ namespace WebApplication2.controllers
         public ValuesController(IConfiguration configuration, DBClass dbContext)
         {
             _configuration = configuration;
-            _dbContext = dbContext; 
+            _dbContext = dbContext;
         }
 
         [AllowAnonymous]
@@ -37,7 +37,7 @@ namespace WebApplication2.controllers
         [HttpGet("GetDate")]
         public string GetDate()
         {
-            
+
             return GetUTCDateTime().ToString();
         }
 
@@ -49,13 +49,13 @@ namespace WebApplication2.controllers
             return GetUTCDateTime2().ToString();
         }
 
-       
+
         // POST api/<WalletController>
         [HttpPost("CreateVault")]
         public async Task<string> CreateVault([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            var response= await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
+            var response = await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
 
 
             // Add Vault Info . . .
@@ -99,30 +99,48 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
         }
 
+        [HttpGet("GetTags")]
+        public List<Tag> GetTags()
+        {
+            var Repository = new Repository<Tag>(_dbContext);
+            var Info = Repository.GetAllAsync().Result;
+            var Data = Info.ToList();
+
+            return Data;
+        }
+
+        [HttpGet("GetCategories")]
+        public List<Category> GetCategories()
+        {
+            var Repository = new Repository<Category>(_dbContext);
+            var Info = Repository.GetAllAsync().Result;
+            var Data = Info.ToList();
+
+            return Data;
+        }
+
         // GET api/<WalletController>
         [HttpPost("GetVaultInfo")]
-        public IActionResult GetVaultInfo([FromBody] JsonElement body)
+        public List<VaultInfo> GetVaultInfo([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
-            int VaultId = data.vaultId;
+            int VaultId = data.vaultId ?? 0;
+            int TagId = data.tagId ?? 0;
+            int CategoryId = data.categoryId ?? 0;
 
             var vaultRepository = new Repository<VaultInfo>(_dbContext);
             var VaultInfo = vaultRepository.GetAllAsync().Result;
-            var Vault = VaultInfo.Where(a => a.VaultId == VaultId).FirstOrDefault();
+            var Vault = VaultInfo.Where(a => (a.VaultId == VaultId || VaultId == 0)
+            && (a.Category == CategoryId || CategoryId==0) && (a.Tag==TagId || TagId==0) ).ToList();
 
             if(Vault==null)
             {
-                return NotFound();
+                return new List<VaultInfo>();
             }
             else
             {
-                return Ok(new
-                {
-                    VaultId = Vault.VaultId,
-                    Tag = Vault.Tag,
-                    Category = Vault.Category
-                });
+                return Vault;
             }
 
             
