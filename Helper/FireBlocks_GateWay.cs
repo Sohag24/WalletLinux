@@ -34,9 +34,20 @@ namespace WalletApp.Helper
             {
                 return await ApiClient.GetAsync(endPoint, token, "X-API-Key", key);
             }
-            else
+            else if (ApiMethod == ApiMethods.Post)
             {
                 return await ApiClient.PostAsync(endPoint, token, "X-API-Key", key, BodyStr);
+            }
+            else if(ApiMethod == ApiMethods.Put)
+            {
+                return await Task.FromResult<string>("Not Implemented");
+            }
+            else if(ApiMethod == ApiMethods.Delete)
+            {
+                return await ApiClient.DeleteAsync(endPoint,token, "X-API-Key", key);
+            }
+            else {
+                return await Task.FromResult<string>("Not Implemented");
             }
         }
     }

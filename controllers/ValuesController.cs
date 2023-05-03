@@ -234,9 +234,11 @@ namespace WebApplication2.controllers
         [HttpGet("GetTransactions")]
         public async Task<string> GetTransactions()
         {
+            var QueryString = HttpContext.Request.QueryString;
+            string endPoint = EndPoints.Transactions + QueryString;
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            return await FG.CallApi(EndPoints.Transactions, ApiMethods.Get, EmptyJson);
+            return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
         }
 
         [HttpGet("GetInternalWallets")]
@@ -271,12 +273,36 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.InternalWallets, ApiMethods.Post, body);
         }
 
+        // Delete api/<WalletController>
+        [HttpPost("DeleteInternalWallet")]
+        public async Task<string> DeleteInternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.InternalWallets + "/" + data.WalletId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
+        }
+
         // POST api/<WalletController>
         [HttpPost("CreateExternalWallet")]
         public async Task<string> CreateExternalWallet([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Post, body);
+        }
+
+        // Delete api/<WalletController>
+        [HttpPost("DeleteExternalWallet")]
+        public async Task<string> DeleteExternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.ExternalWallets + "/" + data.WalletId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
         }
 
         // POST api/<WalletController>
@@ -287,6 +313,17 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.Contracts, ApiMethods.Post, body);
         }
 
+        // Delete api/<WalletController>
+        [HttpPost("DeleteContracts")]
+        public async Task<string> DeleteContracts([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Contracts + "/" + data.contractId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
+        }
 
         // POST api/<WalletController>
         [HttpPost("AddAssetsInternalWallet")]
@@ -405,6 +442,28 @@ namespace WebApplication2.controllers
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+        }
+
+        [HttpPost("FreezeTransaction")]
+        public async Task<string> FreezeTransaction([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Transactions + "/" + data.txId + "/freeze";
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
+        }
+
+        [HttpPost("UnfreezeTransaction")]
+        public async Task<string> UnfreezeTransaction([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Transaction + "/" + data.txId + "/unfreeze";
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
         }
 
         public static DateTime GetUTCDateTime()
