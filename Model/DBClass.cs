@@ -10,5 +10,7 @@ namespace WalletApp.Model
         public DbSet<VaultInfo> VaultInfo { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<Category> Categories { get; set; }
+
+        public DbSet<TransactionInfo> TransactionInfo { get; set; }
     }
 }

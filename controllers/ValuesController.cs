@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -121,7 +122,7 @@ namespace WebApplication2.controllers
 
         // GET api/<WalletController>
         [HttpPost("GetVaultInfo")]
-        public List<VaultInfo> GetVaultInfo([FromBody] JsonElement body)
+        public List<VaultInfoDTO> GetVaultInfo([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -134,13 +135,25 @@ namespace WebApplication2.controllers
             var Vault = VaultInfo.Where(a => (a.VaultId == VaultId || VaultId == 0)
             && (a.Category == CategoryId || CategoryId==0) && (a.Tag==TagId || TagId==0) ).ToList();
 
-            if(Vault==null)
+            var categoryRepository = new Repository<Category>(_dbContext);
+            var CategoryInfo = categoryRepository.GetAllAsync().Result;
+
+            var tagRepository = new Repository<Tag>(_dbContext);
+            var TagInfo = tagRepository.GetAllAsync().Result;
+
+            var result = from v in Vault
+                         join c in CategoryInfo on v.Category equals c.Id
+                         join t in TagInfo on v.Tag equals t.Id
+                         select new VaultInfoDTO { vaultId=v.VaultId, tag=t.Name, category=c.Name };
+
+
+            if (result == null)
             {
-                return new List<VaultInfo>();
+                return new List<VaultInfoDTO>();
             }
             else
             {
-                return Vault;
+                return result.ToList();
             }
 
             
@@ -239,6 +252,32 @@ namespace WebApplication2.controllers
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+        }
+
+        [HttpPost("GetTransactionAmount")]
+        public TransactionInfoDTO GetTransactionAmount([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            var Repository = new Repository<TransactionInfo>(_dbContext);
+            var Info = Repository.GetAllAsync().Result;
+            var Data = Info.Where(d=>d.UserId== data.UserId).ToList();
+
+            decimal InAmount = 0;
+            decimal OutAmount = 0;
+            if (Data==null)
+            {
+                return new TransactionInfoDTO();
+            }
+            else
+            {
+                InAmount=Data.Where(a=>a.TransactionType=="IN").Sum(a=>a.Amount);
+                OutAmount = Data.Where(a => a.TransactionType == "OUT").Sum(a => a.Amount);
+                return new TransactionInfoDTO() { UserId=data.UserId,InAmount= InAmount ,OutAmount= OutAmount ,FrozenAmount=0};
+            }
+
+            //return Data;
         }
 
         [HttpGet("GetInternalWallets")]
@@ -441,8 +480,24 @@ namespace WebApplication2.controllers
         public async Task<string> transactions([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+
+            // Add Transaction Info . . .
+            try
+            {
+                string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+                dynamic data = JObject.Parse(BodyStr);
+
+                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = data.TransactionType, Amount = data.amount };
+                var txRepository = new Repository<TransactionInfo>(_dbContext);
+                var savedUser = await txRepository.SaveAsync(newTransaction);
+            }
+            catch (Exception ex) { }
+
             return await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+
         }
+
+
 
         [HttpPost("FreezeTransaction")]
         public async Task<string> FreezeTransaction([FromBody] JsonElement body)
