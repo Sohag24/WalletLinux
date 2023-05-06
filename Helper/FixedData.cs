@@ -14,7 +14,9 @@
         // Coin Market
         public const string TokensPrice = "v1/cryptocurrency/listings/latest";
         public const string PriceView = "v2/cryptocurrency/quotes/historical";
+        public const string AssetMarketCap = "v2/cryptocurrency/quotes/latest";
         
+
     }
 
     public static class ApiMethods

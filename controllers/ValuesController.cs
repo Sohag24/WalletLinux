@@ -591,5 +591,15 @@ namespace WebApplication2.controllers
             CoinMarket_GateWay CG = new CoinMarket_GateWay(_configuration);
             return await CG.CallApi(endPoint, ApiMethods.Get);
         }
+
+        [HttpGet("GetAssetMarketCap")]
+        public async Task<string> GetAssetMarketCap()
+        {
+            var QueryString = HttpContext.Request.QueryString;
+            string endPoint = EndPoints.AssetMarketCap + QueryString;
+
+            CoinMarket_GateWay CG = new CoinMarket_GateWay(_configuration);
+            return await CG.CallApi(endPoint, ApiMethods.Get);
+        }
     }
 }
