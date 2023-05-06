@@ -16,6 +16,10 @@ namespace WalletApp.Helper
             ConfigurationDTO con = new ConfigurationDTO();
             con.Key= _configuration["Jwt:Key"] ?? "";
             con.FireBlocks_BaseURL = _configuration["FireBlocks_BaseURL"] ?? "";
+
+            con.CoinMarketAPIKey = _configuration["CoinMarketAPIKey"] ?? "";
+            con.CoinMarket_BaseURL = _configuration["CoinMarket_BaseURL"] ?? "";
+
             return con;
         }
     }

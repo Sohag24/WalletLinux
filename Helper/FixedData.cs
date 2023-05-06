@@ -11,7 +11,10 @@
         public const string Contracts = "/v1/contracts";
         public const string Transaction = "/v1/transactions";
 
-
+        // Coin Market
+        public const string TokensPrice = "v1/cryptocurrency/listings/latest";
+        public const string PriceView = "v2/cryptocurrency/quotes/historical";
+        
     }
 
     public static class ApiMethods

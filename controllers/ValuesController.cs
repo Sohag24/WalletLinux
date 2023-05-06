@@ -572,5 +572,24 @@ namespace WebApplication2.controllers
             return utc_datetime;
 
         }
+
+
+        // Coin Market API
+        [HttpGet("GetTokensPrice")]
+        public async Task<string> GetTokensPrice()
+        {
+           CoinMarket_GateWay CG=new CoinMarket_GateWay(_configuration);
+            return await CG.CallApi(EndPoints.TokensPrice, ApiMethods.Get);
+        }
+
+        [HttpGet("GetPriceView")]
+        public async Task<string> GetPriceView()
+        {
+            var QueryString = HttpContext.Request.QueryString;
+            string endPoint = EndPoints.PriceView + QueryString;
+        
+            CoinMarket_GateWay CG = new CoinMarket_GateWay(_configuration);
+            return await CG.CallApi(endPoint, ApiMethods.Get);
+        }
     }
 }
