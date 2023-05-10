@@ -324,6 +324,18 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Delete, body);
         }
 
+        // Delete api/<WalletController>
+        [HttpPost("DeleteAssetInternalWallet")]
+        public async Task<string> DeleteAssetInternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.InternalWallets + "/" + data.WalletId+"/"+data.AssetId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
+        }
+
         // POST api/<WalletController>
         [HttpPost("CreateExternalWallet")]
         public async Task<string> CreateExternalWallet([FromBody] JsonElement body)
@@ -344,6 +356,18 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Delete, body);
         }
 
+        // Delete api/<WalletController>
+        [HttpPost("DeleteAssetExternalWallet")]
+        public async Task<string> DeleteAssetExternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.ExternalWallets + "/" + data.WalletId + "/" + data.AssetId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
+        }
+
         // POST api/<WalletController>
         [HttpPost("CreateContracts")]
         public async Task<string> CreateContracts([FromBody] JsonElement body)
@@ -359,6 +383,18 @@ namespace WebApplication2.controllers
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
             string endPoint = EndPoints.Contracts + "/" + data.contractId;
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Delete, body);
+        }
+
+        // Delete api/<WalletController>
+        [HttpPost("DeleteAssetContracts")]
+        public async Task<string> DeleteAssetContracts([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Contracts + "/" + data.contractId + "/" + data.AssetId;
 
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(endPoint, ApiMethods.Delete, body);
