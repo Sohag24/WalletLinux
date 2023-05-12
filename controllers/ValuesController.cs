@@ -280,6 +280,29 @@ namespace WebApplication2.controllers
             //return Data;
         }
 
+        [HttpPost("TransactionEstimateFee")]
+        public async Task<string> TransactionEstimateFee([FromBody] JsonElement body)
+        {
+            
+            string endPoint = EndPoints.Transactions + "/estimate_fee";
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
+        }
+
+        // GET api/<WalletController>
+        [HttpPost("GetTransactionById")]
+        public async Task<string> GetTransactionById([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.Transactions + "/" + data.txId;
+
+            JsonElement EmptyJson = new JsonElement();
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+        }
+
         [HttpGet("GetInternalWallets")]
         public async Task<string> GetInternalWallets()
         {
