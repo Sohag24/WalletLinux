@@ -625,9 +625,13 @@ namespace WebApplication2.controllers
                 string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
                 dynamic data = JObject.Parse(BodyStr);
 
-                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = data.TransactionType, Amount = data.amount };
+                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount };
                 var txRepository = new Repository<TransactionInfo>(_dbContext);
                 var savedUser = await txRepository.SaveAsync(newTransaction);
+
+                var newTransactionTo = new TransactionInfo() { UserId = data.UserIdTo, TransactionType = "IN", Amount = data.amount };
+                var txRepositoryTo = new Repository<TransactionInfo>(_dbContext);
+                var savedUserTo = await txRepositoryTo.SaveAsync(newTransactionTo);
             }
             catch (Exception ex) { }
 
