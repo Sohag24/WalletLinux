@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Dynamic;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using WalletApp.Helper;
 using WalletApp.Model;
 
@@ -85,7 +88,83 @@ namespace WebApplication2.controllers
             return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
         }
 
-        // GET api/<WalletController>
+        [HttpPost("GetAssetPercentage")]
+        public async Task<string> GetAssetPercentage([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            string input = data.vaultList;
+            string[] vaults = input.Split(',');
+
+            dynamic AssetList=null;
+            List<dynamic> mergedList = new List<dynamic>();
+            foreach (string vault in vaults)
+            {
+                int vaultId = int.Parse(vault);
+
+                string endPoint = EndPoints.VaultCreate + "/" + vaultId;
+                JsonElement EmptyJson = new JsonElement();
+
+                FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+                var VaultList = await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+
+                JObject json = JObject.Parse(VaultList);
+
+                AssetList = json["assets"];
+
+                //var objects = JsonConvert.DeserializeObject<dynamic[]>(AssetList);
+                mergedList.AddRange(AssetList);
+            }
+
+
+            
+
+            // Calculate total balance
+            decimal totalBalance = 0;
+            foreach (var assets in mergedList)
+            {   
+                
+                decimal balance = decimal.Parse(assets.balance.ToString());
+                totalBalance += balance;
+            }
+
+            // Calculate percentage of total balance for each asset
+            Dictionary<string, decimal> assetPercentages = new Dictionary<string, decimal>();
+            foreach (var asset in mergedList)
+            {
+                string id = asset.id.ToString();
+                decimal balance = decimal.Parse(asset.balance.ToString());
+                decimal percentage = 0;
+                if (totalBalance != 0)
+                {
+                     percentage = (balance / totalBalance) * 100;
+                }
+                if (assetPercentages.ContainsKey(id))
+                {
+                    // Update the existing value
+                    assetPercentages[id] = assetPercentages[id]+ percentage;
+                }
+                else
+                {
+                    // Add a new key-value pair to the dictionary
+                    assetPercentages.Add(id, percentage);
+                }
+            }
+
+            // Create JSON object with total balance and asset percentages
+            dynamic resultObject = new ExpandoObject();
+            resultObject.totalBalance = totalBalance;
+            resultObject.assetPercentages = assetPercentages;
+
+            // Convert JSON object to string
+            string jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(resultObject);
+
+            return jsonString;
+
+        }
+
+         // GET api/<WalletController>
         [HttpPost("GetVaultsByVaultId")]
         public async Task<string> GetVaultsByVaultId([FromBody] JsonElement body)
         {
