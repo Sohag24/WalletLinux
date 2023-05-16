@@ -97,59 +97,65 @@ namespace WebApplication2.controllers
             string input = data.vaultList;
             string[] vaults = input.Split(',');
 
-            dynamic AssetList=null;
-            List<dynamic> mergedList = new List<dynamic>();
-            foreach (string vault in vaults)
+            JsonElement EmptyJsons = new JsonElement();
+            FireBlocks_GateWay FGs = new FireBlocks_GateWay(_configuration);
+            var jsons = await FGs.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJsons);
+
+            // Deserialize the JSON string into RootObject
+            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsons);
+
+            // Create a new RootObject with filtered accounts
+            Vaults filteredRootObject = new Vaults
             {
-                int vaultId = int.Parse(vault);
+                Accounts = rootObject.Accounts
+                    .Where(account => vaults.Contains(account.Id))
+                    .ToArray()
+            };
 
-                string endPoint = EndPoints.VaultCreate + "/" + vaultId;
-                JsonElement EmptyJson = new JsonElement();
-
-                FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-                var VaultList = await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
-
-                JObject json = JObject.Parse(VaultList);
-
-                AssetList = json["assets"];
-
-                //var objects = JsonConvert.DeserializeObject<dynamic[]>(AssetList);
-                mergedList.AddRange(AssetList);
-            }
-
-
-            
+            // Serialize the filteredRootObject back to JSON string
+            //string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
 
             // Calculate total balance
             decimal totalBalance = 0;
-            foreach (var assets in mergedList)
-            {   
-                
-                decimal balance = decimal.Parse(assets.balance.ToString());
-                totalBalance += balance;
+            
+            foreach (var accounts in filteredRootObject.Accounts)
+            {
+                var i = 0;
+                foreach (var asset in accounts.Assets)
+                {
+                    decimal balance = decimal.Parse(asset.Balance.ToString());
+                    totalBalance += balance;
+                    i++;
+                }
             }
 
+            
             // Calculate percentage of total balance for each asset
             Dictionary<string, decimal> assetPercentages = new Dictionary<string, decimal>();
-            foreach (var asset in mergedList)
+            foreach (var accounts in filteredRootObject.Accounts)
             {
-                string id = asset.id.ToString();
-                decimal balance = decimal.Parse(asset.balance.ToString());
-                decimal percentage = 0;
-                if (totalBalance != 0)
+                foreach (var asset in accounts.Assets)
                 {
-                     percentage = (balance / totalBalance) * 100;
+                    string id = asset.Id.ToString();
+                    decimal balance = decimal.Parse(asset.Balance.ToString());
+                    decimal percentage = 0;
+                    if (totalBalance != 0)
+                    {
+                        percentage = (balance / totalBalance) * 100;
+                    }
+
+                    if (assetPercentages.ContainsKey(id))
+                    {
+                        // Update the existing value																									
+                        assetPercentages[id] = assetPercentages[id] + percentage;
+                    }
+                    else
+                    {
+                        // Add a new key-value pair to the dictionary																									
+                        assetPercentages.Add(id, percentage);
+                    }
                 }
-                if (assetPercentages.ContainsKey(id))
-                {
-                    // Update the existing value
-                    assetPercentages[id] = assetPercentages[id]+ percentage;
-                }
-                else
-                {
-                    // Add a new key-value pair to the dictionary
-                    assetPercentages.Add(id, percentage);
-                }
+            
             }
 
             // Create JSON object with total balance and asset percentages
