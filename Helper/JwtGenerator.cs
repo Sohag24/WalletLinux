@@ -93,7 +93,7 @@ public class JwtGenerator
 
     public static DateTime GetUTCDateTime()
     {
-        
+        /*
         var httpClient = new HttpClient();
 
         // Set the URL of the World Time API endpoint
@@ -109,12 +109,12 @@ public class JwtGenerator
         
         // Get the value of the "name" variable as a string
         var utc_datetime = (DateTime)jsonObject["utc_datetime"];
-        
+        */
 
         // Parse the response JSON to get the current UTC datetime
         //var dateTimeUtc = JsonConvert.DeserializeObject<string>(responseContent);
 
-        //var utc_datetime = DateTime.UtcNow;
+        var utc_datetime = DateTime.UtcNow;
 
         return utc_datetime;
 
