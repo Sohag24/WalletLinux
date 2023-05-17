@@ -7,4 +7,6 @@ public interface IRepository<T> where T : class
     Task<bool> DeleteAsync(T entity);
     Task<T> GetByIdAsync(int id);
     Task<IEnumerable<T>> GetAllAsync();
+
+    Task<bool> ExecuteSQL(string sql);
 }

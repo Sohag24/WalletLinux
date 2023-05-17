@@ -339,6 +339,39 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
         }
 
+        [HttpPost("GetActiveTransactions")]
+        public async Task<string> GetActiveTransactions([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            var QueryString = HttpContext.Request.QueryString;
+            string endPoint = EndPoints.Transactions + QueryString;
+            JsonElement EmptyJson = new JsonElement();
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            var transactionResp= await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+
+            // Get Active transaction ID from DB
+            var transactionRepository = new Repository<TransactionInfo>(_dbContext);
+            var TransactionInfo = transactionRepository.GetAllAsync().Result;
+            var ActiveTransactions = TransactionInfo.Where(a => a.UserId == data.userId && a.IsActive == true);
+
+            List<Transaction> rootObject = JsonConvert.DeserializeObject<List<Transaction>>(transactionResp);
+
+           
+            List<Transaction> filteredRootObject = rootObject.Join(
+            ActiveTransactions,
+            transaction => transaction.id,
+            filter => filter.txId,
+            (transaction, filter) => transaction
+            ).ToList();
+
+            string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
+
+            return filteredJson;
+
+        }
+
         [HttpPost("GetTransactionAmount")]
         public TransactionInfoDTO GetTransactionAmount([FromBody] JsonElement body)
         {
@@ -625,27 +658,49 @@ namespace WebApplication2.controllers
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
 
+            var TransactionResp= await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+
             // Add Transaction Info . . .
             try
             {
+                JObject transaction = JObject.Parse(TransactionResp);
+                var txId = transaction["id"].ToString();
+
                 string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
                 dynamic data = JObject.Parse(BodyStr);
 
-                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount };
+                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount,txId= txId,IsActive=true };
                 var txRepository = new Repository<TransactionInfo>(_dbContext);
                 var savedUser = await txRepository.SaveAsync(newTransaction);
 
-                var newTransactionTo = new TransactionInfo() { UserId = data.UserIdTo, TransactionType = "IN", Amount = data.amount };
+                var newTransactionTo = new TransactionInfo() { UserId = data.UserIdTo, TransactionType = "IN", Amount = data.amount,txId="0", IsActive = false };
                 var txRepositoryTo = new Repository<TransactionInfo>(_dbContext);
                 var savedUserTo = await txRepositoryTo.SaveAsync(newTransactionTo);
             }
             catch (Exception ex) { }
 
-            return await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+            return TransactionResp;
 
         }
 
+        [HttpPost("HideTransaction")]
+        public async Task<bool> HideTransaction([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
 
+            var txId=data.txId;
+            var userId = data.userId;
+
+            var upRepository = new Repository<TransactionInfo>(_dbContext);
+
+            var sql = "update TransactionInfo set IsActive=0 where UserId=" + userId + " and IsActive=1 and txId="+ txId;
+            if (txId == "0")
+            {
+                sql = "update TransactionInfo set IsActive=0 where UserId=" + userId + " and IsActive=1";
+            }
+            return await upRepository.ExecuteSQL(sql);
+        }
 
         [HttpPost("FreezeTransaction")]
         public async Task<string> FreezeTransaction([FromBody] JsonElement body)

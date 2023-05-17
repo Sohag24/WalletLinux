@@ -47,4 +47,19 @@ public class Repository<T> : IRepository<T> where T : class
     {
         return await _dbContext.Set<T>().ToListAsync();
     }
+
+
+    public async Task<bool> ExecuteSQL(string sql)
+    {
+        try
+        {
+            await _dbContext.Database.ExecuteSqlRawAsync(sql);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var message = ex.Message;
+            return false;
+        }
+    }
 }
