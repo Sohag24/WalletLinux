@@ -71,7 +71,7 @@ namespace WebApplication2.controllers
                 string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
                 dynamic data = JObject.Parse(BodyStr);
 
-                var newVault = new VaultInfo() { VaultId = VaultId, Tag = data.tag, Category = data.category };
+                var newVault = new VaultInfo() { VaultId = VaultId,UserId= data.userId, Tag = data.tag, Category = data.category };
                 var VaultRepository = new Repository<VaultInfo>(_dbContext);
                 var savedUser = await VaultRepository.SaveAsync(newVault);
             }
