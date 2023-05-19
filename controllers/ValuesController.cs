@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using System.Dynamic;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using WalletApp.Helper;
@@ -813,5 +814,29 @@ namespace WebApplication2.controllers
             CoinMarket_GateWay CG = new CoinMarket_GateWay(_configuration);
             return await CG.CallApi(endPoint, ApiMethods.Get);
         }
+
+
+        // Plaid .........
+
+        [HttpPost("GetPlaidToken")]
+        public string GetPlaidToken([FromBody] JsonElement body)
+        {
+            var httpClient = new HttpClient();
+
+            // Set the URL of the World Time API endpoint
+            var apiUrl = "https://sandbox.plaid.com/link/token/create";
+
+            var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
+
+            // Send an HTTP GET request to the API endpoint and get the response
+            var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+
+            // Read the response content as a string
+            var responseContent = response.Content.ReadAsStringAsync().Result;
+
+            return responseContent;
+
+        }
+
     }
 }
