@@ -356,19 +356,28 @@ namespace WebApplication2.controllers
             var TransactionInfo = transactionRepository.GetAllAsync().Result;
             var ActiveTransactions = TransactionInfo.Where(a => a.UserId == data.userId && a.IsActive == true);
 
-            List<Transaction> rootObject = JsonConvert.DeserializeObject<List<Transaction>>(transactionResp);
+            if (TransactionInfo == null)
+            {
 
-           
-            List<Transaction> filteredRootObject = rootObject.Join(
-            ActiveTransactions,
-            transaction => transaction.id,
-            filter => filter.txId,
-            (transaction, filter) => transaction
-            ).ToList();
+                List<Transaction> rootObject = JsonConvert.DeserializeObject<List<Transaction>>(transactionResp);
 
-            string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
 
-            return filteredJson;
+                List<Transaction> filteredRootObject = rootObject.Join(
+                ActiveTransactions,
+                transaction => transaction.id,
+                filter => filter.txId,
+                (transaction, filter) => transaction
+                ).ToList();
+
+                string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
+
+                return filteredJson;
+
+            }
+            else
+            {
+                return transactionResp;
+            }
 
         }
 
@@ -694,10 +703,10 @@ namespace WebApplication2.controllers
 
             var upRepository = new Repository<TransactionInfo>(_dbContext);
 
-            var sql = "update TransactionInfo set IsActive=0 where UserId=" + userId + " and IsActive=1 and txId="+ txId;
+            var sql = "update TransactionInfo set IsActive=0 where UserId='" + userId + "' and IsActive=1 and txId='"+ txId+"'";
             if (txId == "0")
             {
-                sql = "update TransactionInfo set IsActive=0 where UserId=" + userId + " and IsActive=1";
+                sql = "update TransactionInfo set IsActive=0 where UserId='" + userId + "' and IsActive=1";
             }
             return await upRepository.ExecuteSQL(sql);
         }
