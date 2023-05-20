@@ -702,8 +702,12 @@ namespace WebApplication2.controllers
         [HttpPost("transactions")]
         public async Task<string> transactions([FromBody] JsonElement body)
         {
-            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
 
+            //TransactionFeeTransfer(data);
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             var TransactionResp= await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
 
             // Add Transaction Info . . .
@@ -711,9 +715,6 @@ namespace WebApplication2.controllers
             {
                 JObject transaction = JObject.Parse(TransactionResp);
                 var txId = transaction["id"].ToString();
-
-                string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
-                dynamic data = JObject.Parse(BodyStr);
 
                 var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount,txId= txId,IsActive=true };
                 var txRepository = new Repository<TransactionInfo>(_dbContext);
@@ -725,8 +726,49 @@ namespace WebApplication2.controllers
             }
             catch (Exception ex) { }
 
+            // Transaction Fee . . .
+            try
+            {
+                TransactionFeeTransfer(data);
+            }
+            catch (Exception ex) { }
+
             return TransactionResp;
 
+        }
+
+
+        public async Task<string> TransactionFeeTransfer(dynamic data)
+        {
+            try
+            {
+                decimal Amount = data.amount;
+                decimal Rate = GetRate();
+                decimal DollarAmount = Rate * Amount;
+                decimal Fee = (1 / 100) * DollarAmount;
+                if (DollarAmount < 500)
+                {
+                    Fee = Fee + (decimal)0.5;
+                }
+
+                decimal ETHFee = (1 / Rate) * Fee;
+
+                // Transfer .......
+                data.destination.type = "EXTERNAL_WALLET";
+                data.destination.id = "18dbc250-5997-48b3-8987-95ff851b835a";
+                //data.destination.oneTimeAddress.address = "0xe32CA17AAA9391eb0c22513b9A2509Cf6562A629";
+                data.amount = ETHFee;
+
+                string reversedJson = data.ToString();
+                JsonDocument reversedBody = JsonDocument.Parse(reversedJson);
+                JsonElement reversedElement = reversedBody.RootElement;
+
+                FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+                var TransactionResp = await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, reversedElement);
+
+                return TransactionResp;
+
+            } catch (Exception ex) { return ""; }  
         }
 
         [HttpPost("HideTransaction")]
@@ -872,6 +914,38 @@ namespace WebApplication2.controllers
 
             return responseContent;
 
+        }
+
+        // Get Convertion Rate
+
+        public decimal GetRate()
+        {
+            //string body = "\"networkid\":\"1\",\r\n    \"excnetworkid\":\"1\",\r\n    \"fromtokenaddress\":\"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\r\n    \"totokenaddress\":\"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\",\r\n     \"amount\":\"1000000000000000000\"";
+
+            // Your JSON object
+            var jsonObject = new
+            {
+                networkid = "1",
+                excnetworkid = "1",
+                fromtokenaddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                totokenaddress = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                amount = "1000000000000000000"
+            };
+
+            // Convert the object to a JSON string
+            string body = JsonConvert.SerializeObject(jsonObject);
+
+            var httpClient = new HttpClient();
+            // Set the URL of the World Time API endpoint
+            var apiUrl = "https://31.220.108.116:3002/getquote";
+            var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
+            // Send an HTTP GET request to the API endpoint and get the response
+            var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+            // Read the response content as a string
+            var responseContent = response.Content.ReadAsStringAsync().Result;
+            var obj=JObject.Parse(responseContent);
+            decimal amt = Convert.ToDecimal( obj["quote"]["toTokenAmount"] );
+            return amt / 1000000;
         }
 
     }
