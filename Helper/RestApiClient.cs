@@ -44,6 +44,8 @@ public class RestApiClient
         if (!response.IsSuccessStatusCode)
         {
             throw new Exception($"API call failed with status code {response.StatusCode}.  Token: {authorizationToken}  Response body: {responseBody}");
+            //throw new Exception($"{ responseBody }");
+            //return responseBody;
         }
 
         return responseBody;

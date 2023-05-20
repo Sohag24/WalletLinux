@@ -64,6 +64,7 @@ public class FeeInfo
 
 public class SignedMessages
 {
+    public string name { get; set; }
     public string content { get; set; }
     public string algorithm { get; set; }
     public List<int> derivationPath { get; set; }
@@ -114,12 +115,12 @@ public class Transaction
     public SourceDestination source { get; set; }
     public SourceDestination destination { get; set; }
     public ContractCallDecodedData contractCallDecodedData { get; set; }
-    public int requestedAmount { get; set; }
-    public int amount { get; set; }
-    public int netAmount { get; set; }
-    public int amountUSD { get; set; }
-    public int serviceFee { get; set; }
-    public int networkFee { get; set; }
+    public decimal requestedAmount { get; set; }
+    public decimal amount { get; set; }
+    public decimal netAmount { get; set; }
+    public decimal amountUSD { get; set; }
+    public decimal serviceFee { get; set; }
+    public decimal networkFee { get; set; }
     public long createdAt { get; set; }
     public long lastUpdated { get; set; }
     public string status { get; set; }

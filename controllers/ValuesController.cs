@@ -383,23 +383,30 @@ namespace WebApplication2.controllers
             var transactionRepository = new Repository<TransactionInfo>(_dbContext);
             var TransactionInfo = transactionRepository.GetAllAsync().Result;
             var userId = data.userId.ToString();
-            var ActiveTransactions = TransactionInfo.Where(a => a.UserId == userId && a.IsActive == true);
+            var ActiveTransactions = TransactionInfo.Where(a => a.UserId == userId && a.IsActive == true).ToList();
 
-            if (TransactionInfo == null)
+            // If there are active transactions
+            if (ActiveTransactions != null)
             {
 
-                List<Transaction> rootObject = JsonConvert.DeserializeObject<List<Transaction>>(transactionResp);
+                // Deserialize the JSON object
+                List<dynamic> rootObject = JsonConvert.DeserializeObject<List<dynamic>>(transactionResp);
+
+                // Join the JSON object with the active transactions
+                //List<dynamic> filteredRootObject = rootObject.Join(
+                //    ActiveTransactions,
+                //    transaction => transaction.id,
+                //    filter => filter.txId,
+                //    (transaction, filter) => transaction
+                //).ToList();
+
+                List<dynamic> filteredRootObject = rootObject.Where(item => ActiveTransactions.Any(id => item.id == id.txId)).ToList();
 
 
-                List<Transaction> filteredRootObject = rootObject.Join(
-                ActiveTransactions,
-                transaction => transaction.id,
-                filter => filter.txId,
-                (transaction, filter) => transaction
-                ).ToList();
-
+                // Serialize the filtered JSON object
                 string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
 
+                // Return the filtered JSON object
                 return filteredJson;
 
             }
