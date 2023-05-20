@@ -59,6 +59,36 @@ namespace WebApplication2.controllers
         [HttpPost("CreateVault")]
         public async Task<string> CreateVault([FromBody] JsonElement body)
         {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            var SubscriptionLevel = data.SubscriptionLevel;
+            var userId= data.userId.ToString();
+
+            var vRepository = new Repository<VaultInfo>(_dbContext);
+            var VaultInfo = vRepository.GetAllAsync().Result;
+            int VautlCount = VaultInfo.Where(a => a.UserId == userId).Count();
+
+            if (SubscriptionLevel == "FREE" && VautlCount >= 1)
+            {
+                Response.StatusCode = 403; // Set the HTTP status code to 403
+                return "Your account only supports 1 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+            }
+            else if(SubscriptionLevel=="SILVER" && VautlCount>=2)
+            {
+                Response.StatusCode = 403; // Set the HTTP status code to 403
+                return "Your account only supports 2 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+            }
+            else if (SubscriptionLevel == "GOLD" && VautlCount >= 3)
+            {
+                Response.StatusCode = 403; // Set the HTTP status code to 403
+                return "Your account only supports 3 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+            }
+            else if (SubscriptionLevel == "PLATINUM")
+            {
+
+            }
+            else{}
+
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             var response = await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
 
@@ -68,9 +98,6 @@ namespace WebApplication2.controllers
             {
                 dynamic responseData = JObject.Parse(response);
                 int VaultId = responseData.id;
-
-                string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
-                dynamic data = JObject.Parse(BodyStr);
 
                 var newVault = new VaultInfo() { VaultId = VaultId,UserId= data.userId, Tag = data.tag, Category = data.category };
                 var VaultRepository = new Repository<VaultInfo>(_dbContext);
@@ -355,7 +382,8 @@ namespace WebApplication2.controllers
             // Get Active transaction ID from DB
             var transactionRepository = new Repository<TransactionInfo>(_dbContext);
             var TransactionInfo = transactionRepository.GetAllAsync().Result;
-            var ActiveTransactions = TransactionInfo.Where(a => a.UserId == data.userId && a.IsActive == true);
+            var userId = data.userId.ToString();
+            var ActiveTransactions = TransactionInfo.Where(a => a.UserId == userId && a.IsActive == true);
 
             if (TransactionInfo == null)
             {
@@ -390,7 +418,8 @@ namespace WebApplication2.controllers
 
             var Repository = new Repository<TransactionInfo>(_dbContext);
             var Info = Repository.GetAllAsync().Result;
-            var Data = Info.Where(d=>d.UserId== data.UserId).ToList();
+            var userId= data.UserId.ToString();
+            var Data = Info.Where(d=>d.UserId== userId).ToList();
 
             decimal InAmount = 0;
             decimal OutAmount = 0;
