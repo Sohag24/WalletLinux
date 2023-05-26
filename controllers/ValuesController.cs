@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using WalletApp.Helper;
+//using WalletApp.Migrations;
 using WalletApp.Model;
 
 namespace WebApplication2.controllers
@@ -54,6 +55,31 @@ namespace WebApplication2.controllers
             return GetUTCDateTime2().ToString();
         }
 
+        // POST api/<WalletController>
+        [HttpPost("CreateAccount")]
+        public async Task<string> CreateAccount([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            var Accounttype = data.AccountType;
+            var userId = data.userId.ToString();
+
+            // Add Account Info . . .
+            try
+            {
+                var newData = new AccountInfo() { AccountType = Accounttype, UserId = userId };
+                var Repository = new Repository<AccountInfo>(_dbContext);
+                var savedUser = await Repository.SaveAsync(newData);
+                Response.StatusCode = 200; // Set the HTTP status code to 403
+                return "Account Creation Successfull!";
+            }
+            catch (Exception ex) {
+                Response.StatusCode = 500; // Set the HTTP status code to 403
+                return "Account Creation Failed! Exception: "+ex.Message;
+            }
+
+        }
+
 
         // POST api/<WalletController>
         [HttpPost("CreateVault")]
@@ -68,20 +94,34 @@ namespace WebApplication2.controllers
             var VaultInfo = vRepository.GetAllAsync().Result;
             int VautlCount = VaultInfo.Where(a => a.UserId == userId).Count();
 
+            var aRepository = new Repository<AccountInfo>(_dbContext);
+            var AccountInfo = aRepository.GetAllAsync().Result;
+            var Account = AccountInfo.Where(a => a.UserId == userId).FirstOrDefault();
+            string AccountType = "Personal";
+            if(Account!= null)
+            {
+                AccountType = Account.AccountType;
+            }
+            int goldAmount = 4;
+            if(AccountType=="Personal")
+            {
+                goldAmount = 3;
+            }
+
             if (SubscriptionLevel == "FREE" && VautlCount >= 1)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports 1 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+                return "Your account only supports 1 vaults.  If you would like to add further vault accounts please ";
             }
             else if(SubscriptionLevel=="SILVER" && VautlCount>=2)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports 2 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+                return "Your account only supports 2 vaults.  If you would like to add further vault accounts please ";
             }
-            else if (SubscriptionLevel == "GOLD" && VautlCount >= 3)
+            else if (SubscriptionLevel == "GOLD" && VautlCount >= goldAmount)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports 3 vaults.  If you would like to add further vault accounts please {upgrade_link}";
+                return "Your account only supports "+ goldAmount + " vaults.  If you would like to add further vault accounts please ";
             }
             else if (SubscriptionLevel == "PLATINUM")
             {
@@ -705,7 +745,7 @@ namespace WebApplication2.controllers
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
 
-            //TransactionFeeTransfer(data);
+            TransactionFeeTransfer(data);
 
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             var TransactionResp= await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
@@ -742,8 +782,10 @@ namespace WebApplication2.controllers
         {
             try
             {
+
                 decimal Amount = data.amount;
-                decimal Rate = GetRate();
+                string assetId= data.assetId;
+                decimal Rate = GetRate(assetId);
                 decimal DollarAmount = Rate * Amount;
                 decimal Fee = (1 / 100) * DollarAmount;
                 if (DollarAmount < 500)
@@ -769,6 +811,92 @@ namespace WebApplication2.controllers
                 return TransactionResp;
 
             } catch (Exception ex) { return ""; }  
+        }
+
+        // Get Convertion Rate
+
+        public decimal GetRate(string assetId)
+        {
+            var fromToken = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+            var amounts = "1000000000000000000"; 
+
+            int index = assetId.IndexOf('_');
+
+            string RealAssetId= assetId;
+            if (index != -1)
+            {
+                 RealAssetId = assetId.Substring(0, index);
+                
+            }
+
+            var httpClient = new HttpClient();
+            // Set the URL of the World Time API endpoint
+            var apiUrl = "https://31.220.108.116:3002/tokens";
+            // Send an HTTP GET request to the API endpoint and get the response
+            var apiResponse = httpClient.GetAsync(apiUrl).Result;
+            string responseContent = apiResponse.Content.ReadAsStringAsync().Result;
+
+            //dynamic tokenList = JsonConvert.DeserializeObject<dynamic>(responseContent);
+
+            //var FindFormAddr = tokenList.Tokens.Where(a => a.symbol == RealAssetId).FirstOrDefault();
+            // Deserialize the JSON string into RootObject
+
+            TokenList tokenList = JsonConvert.DeserializeObject<TokenList>(responseContent);
+            /*
+            foreach (var kvp in tokenList.Tokens)
+            {
+                if (kvp.Value.Symbol == RealAssetId)
+                {
+                    string address = kvp.Value.Address;
+                    int decimals = kvp.Value.Decimals;
+                    fromToken = address;
+                    amounts = "1" + new string('0', decimals);
+                }
+            }
+            */
+            Token matchingToken = tokenList.Tokens.Values.FirstOrDefault(token => token.Symbol == RealAssetId);
+            if (matchingToken != null)
+            {
+                string address = matchingToken.Address;
+                int decimals = matchingToken.Decimals;
+                fromToken = address;
+                amounts = "1" + new string('0', decimals);
+
+            }
+
+
+                /*
+                            if (filteredRootObject != null)
+                            {
+                                fromToken = filteredRootObject.Tokens[0].address;//FindFormAddr.address;
+                                amounts = "1" + new string('0', filteredRootObject.Tokens[0].desimals);
+                            }
+                */
+
+                // Your JSON object
+            var jsonObject = new
+            {
+                networkid = "1",
+                excnetworkid = "1",
+                fromtokenaddress = fromToken,
+                totokenaddress = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                amount = amounts
+            };
+
+            // Convert the object to a JSON string
+            string body = JsonConvert.SerializeObject(jsonObject);
+
+           
+            // Set the URL of the World Time API endpoint
+            apiUrl = "https://31.220.108.116:3002/getquote";
+            var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
+            // Send an HTTP GET request to the API endpoint and get the response
+            var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+            // Read the response content as a string
+            responseContent = response.Content.ReadAsStringAsync().Result;
+            var obj = JObject.Parse(responseContent);
+            decimal amt = Convert.ToDecimal(obj["quote"]["toTokenAmount"]);
+            return amt / 1000000;
         }
 
         [HttpPost("HideTransaction")]
@@ -916,37 +1044,57 @@ namespace WebApplication2.controllers
 
         }
 
-        // Get Convertion Rate
 
-        public decimal GetRate()
+        [HttpPost("UpdatePlaidStatus")]
+        public string UpdatePlaidStatus([FromBody] JsonElement body)
         {
-            //string body = "\"networkid\":\"1\",\r\n    \"excnetworkid\":\"1\",\r\n    \"fromtokenaddress\":\"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\r\n    \"totokenaddress\":\"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\",\r\n     \"amount\":\"1000000000000000000\"";
-
-            // Your JSON object
-            var jsonObject = new
-            {
-                networkid = "1",
-                excnetworkid = "1",
-                fromtokenaddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-                totokenaddress = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-                amount = "1000000000000000000"
-            };
-
-            // Convert the object to a JSON string
-            string body = JsonConvert.SerializeObject(jsonObject);
-
             var httpClient = new HttpClient();
+
             // Set the URL of the World Time API endpoint
-            var apiUrl = "https://31.220.108.116:3002/getquote";
+            var apiUrl = "https://sandbox.plaid.com/identity_verification/list";
             var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+
             // Read the response content as a string
-            var responseContent = response.Content.ReadAsStringAsync().Result;
-            var obj=JObject.Parse(responseContent);
-            decimal amt = Convert.ToDecimal( obj["quote"]["toTokenAmount"] );
-            return amt / 1000000;
+            dynamic responseContent = response.Content.ReadAsStringAsync().Result;
+
+            JsonDocument jsonDocument = JsonDocument.Parse(responseContent);
+
+            //// Extracting statuses
+           // Extracting statuses
+            string kycStatus = jsonDocument.RootElement
+                .GetProperty("identity_verifications")[0]
+                .GetProperty("kyc_check")
+                .GetProperty("status")
+                .GetString();
+
+            if(kycStatus=="success")
+            {
+                string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+                dynamic data = JObject.Parse(BodyStr);
+                string guid = data.client_user_id;
+
+                // Set the URL of the World Time API endpoint
+                apiUrl = "https://clearchainx-dev-web-app-api.azurewebsites.net/wallet/idv?guid="+ guid + "&status=active";
+                // Send an HTTP GET request to the API endpoint and get the response
+                var apiResponse = httpClient.PostAsync(apiUrl, jsonContent).Result;
+                Response.StatusCode = 200;
+                return apiResponse.ToString();
+            }
+            else
+            {
+                Response.StatusCode= 500;
+                return response.ToString();
+            }
+            //return responseContent;
+
         }
+
+        
+
+
+
 
     }
 }

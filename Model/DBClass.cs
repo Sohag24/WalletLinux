@@ -12,5 +12,9 @@ namespace WalletApp.Model
         public DbSet<Category> Categories { get; set; }
 
         public DbSet<TransactionInfo> TransactionInfo { get; set; }
+
+        public DbSet<AccountInfo> accountInfo { get; set; }
+
+        public DbSet<Tokens> Tokens { get; set; }
     }
 }
