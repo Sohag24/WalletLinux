@@ -745,7 +745,7 @@ namespace WebApplication2.controllers
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
 
-            TransactionFeeTransfer(data);
+            //TransactionFeeTransfer(data);
 
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             var TransactionResp= await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
