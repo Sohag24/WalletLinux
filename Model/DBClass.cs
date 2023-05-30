@@ -16,5 +16,16 @@ namespace WalletApp.Model
         public DbSet<AccountInfo> accountInfo { get; set; }
 
         public DbSet<Tokens> Tokens { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Other configurations...
+            modelBuilder.Entity<TransactionInfo>()
+                .Property(x => x.Amount)
+                .HasPrecision(18, 6); // Update the decimal precision here
+            // Other configurations...
+        }
     }
+
+    
 }
