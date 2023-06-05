@@ -80,6 +80,58 @@ namespace WebApplication2.controllers
 
         }
 
+        // POST api/<WalletController>
+        [HttpPost("CreateCategory")]
+        public async Task<string> CreateCategory([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            var Name = data.Name.ToString(); 
+            var userId = data.userId.ToString();
+
+            // Add Info . . .
+            try
+            {
+                var newData = new Category() { Name = Name, UserId = userId };
+                var Repository = new Repository<Category>(_dbContext);
+                var savedUser = await Repository.SaveAsync(newData);
+                Response.StatusCode = 200; // Set the HTTP status code to 403
+                return "Category Creation Successfull!";
+            }
+            catch (Exception ex)
+            {
+                Response.StatusCode = 500; // Set the HTTP status code to 403
+                return "Category Creation Failed! Exception: " + ex.Message;
+            }
+
+        }
+
+        // POST api/<WalletController>
+        [HttpPost("CreateTag")]
+        public async Task<string> CreateTag([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            var Name = data.Name.ToString();
+            var userId = data.userId.ToString();
+
+            // Add Info . . .
+            try
+            {
+                var newData = new Tag() { Name = Name, UserId = userId };
+                var Repository = new Repository<Tag>(_dbContext);
+                var savedUser = await Repository.SaveAsync(newData);
+                Response.StatusCode = 200; // Set the HTTP status code to 403
+                return "Tag Creation Successfull!";
+            }
+            catch (Exception ex)
+            {
+                Response.StatusCode = 500; // Set the HTTP status code to 403
+                return "Tag Creation Failed! Exception: " + ex.Message;
+            }
+
+        }
+
 
         // POST api/<WalletController>
         [HttpPost("CreateVault")]
@@ -253,22 +305,32 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
         }
 
-        [HttpGet("GetTags")]
-        public List<Tag> GetTags()
+        [HttpPost("GetTags")]
+        public List<Tag> GetTags([FromBody] JsonElement body)
         {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            string userId = data.userId.ToString();
+
             var Repository = new Repository<Tag>(_dbContext);
             var Info = Repository.GetAllAsync().Result;
-            var Data = Info.ToList();
+            var Data = Info.Where(d=>d.UserId == userId).ToList();
 
             return Data;
         }
 
-        [HttpGet("GetCategories")]
-        public List<Category> GetCategories()
+        [HttpPost("GetCategories")]
+        public List<Category> GetCategories([FromBody] JsonElement body)
         {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            string userId = data.userId.ToString();
+
             var Repository = new Repository<Category>(_dbContext);
             var Info = Repository.GetAllAsync().Result;
-            var Data = Info.ToList();
+            var Data = Info.Where(d => d.UserId == userId).ToList();
 
             return Data;
         }
