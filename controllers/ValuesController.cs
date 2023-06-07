@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Dynamic;
 using System.Net;
 using System.Net.Http.Headers;
@@ -503,7 +504,12 @@ namespace WebApplication2.controllers
                 //).ToList();
 
                 List<dynamic> filteredRootObject = rootObject.Where(item => ActiveTransactions.Any(id => item.id == id.txId)).ToList();
+                List<dynamic> TransferList = rootObject.Where(item => ActiveTransactions.Any(id => item.id == id.txId && id.TransactionType=="OUT" && id.IsMailSent==false)).ToList();
 
+                if (TransferList != null)
+                {
+                    SendMail(TransferList, userId);
+                }
 
                 // Serialize the filtered JSON object
                 string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
@@ -518,6 +524,62 @@ namespace WebApplication2.controllers
             }
 
         }
+
+        public  async Task<string> SendMail(List<dynamic> TransferList,string userId)
+        {
+            try
+            {
+                foreach (var item in TransferList)
+                {
+                    string guid = userId;
+                    string status = item.status;
+                    string txId = item.id;
+
+                    if (status == "COMPLETED" || status == "CANCELLED" || status == "REJECTED" || status == "BLOCKED" || status == "FAILED")
+                    {
+                        JsonElement newBody = new JsonElement();
+                        using (MemoryStream stream = new MemoryStream())
+                        {
+                            using (Utf8JsonWriter writer = new Utf8JsonWriter(stream))
+                            {
+                                writer.WriteStartObject();
+
+                                writer.WriteString("guid", guid);
+                                writer.WriteString("status", status);
+
+                                writer.WriteEndObject();
+                            }
+
+                            byte[] json = stream.ToArray();
+                            JsonDocument document = JsonDocument.Parse(json);
+                            newBody = document.RootElement;
+                        }
+
+                        // Call API . . . . .
+                        var httpClient = new HttpClient();
+                        // Set the URL of the World Time API endpoint
+                        var apiUrl = "https://clearchainx-dev-web-app-api.azurewebsites.net/wallet/notification?guid=" + userId + "&status=" + status;
+                        var jsonContent = new StringContent("", Encoding.UTF8, "application/json");
+                        // Send an HTTP GET request to the API endpoint and get the response
+                        var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+                        if (response.StatusCode == HttpStatusCode.OK)
+                        {
+                            var upRepository = new Repository<TransactionInfo>(_dbContext);
+                            var sql = "update TransactionInfo set IsMailSent=1 where UserId='" + userId + "' and IsMailSent=0 and txId='" + txId + "'";
+                            var a = await upRepository.ExecuteSQL(sql);
+                        }
+
+                    }
+
+                }
+
+                return "Ok";
+
+            }
+            catch (Exception ex) { return "Not Ok"; }
+        }
+
+      
 
         [HttpPost("GetTransactionAmount")]
         public TransactionInfoDTO GetTransactionAmount([FromBody] JsonElement body)
@@ -1153,8 +1215,37 @@ namespace WebApplication2.controllers
 
         }
 
-        
 
+        [HttpPost("RestCall")]
+        public string RestCall([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            var httpClient = new HttpClient();
+            // Set the URL of the World Time API endpoint
+            var apiUrl = data.URL.ToString();
+            var apiMethod = data.Method;
+
+            var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
+
+            // Send an HTTP GET request to the API endpoint and get the response
+            if (apiMethod == "POST")
+            {
+                var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
+                // Read the response content as a string
+                var responseContent = response.Content.ReadAsStringAsync().Result;
+                return responseContent;
+            }
+            else
+            {
+                var response = httpClient.GetAsync(apiUrl).Result;
+                // Read the response content as a string
+                var responseContent = response.Content.ReadAsStringAsync().Result;
+                return responseContent;
+            }
+
+        }
 
 
 
