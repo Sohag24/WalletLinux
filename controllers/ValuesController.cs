@@ -1199,7 +1199,7 @@ namespace WebApplication2.controllers
                 string guid = data.client_user_id;
 
                 // Set the URL of the World Time API endpoint
-                apiUrl = "https://clearchainx-dev-web-app-api.azurewebsites.net/wallet/idv?guid="+ guid + "&status=active";
+                apiUrl = "https://clearchainx-dev-web-app-api.azurewebsites.net/wallet/idv?guid="+ guid + "&status=passed";
                 // Send an HTTP GET request to the API endpoint and get the response
                 var apiResponse = httpClient.PostAsync(apiUrl, jsonContent).Result;
                 Response.StatusCode = 200;
