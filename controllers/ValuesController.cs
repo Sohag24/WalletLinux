@@ -1189,7 +1189,6 @@ namespace WebApplication2.controllers
            // Extracting statuses
             string kycStatus = jsonDocument.RootElement
                 .GetProperty("identity_verifications")[0]
-                .GetProperty("kyc_check")
                 .GetProperty("status")
                 .GetString();
 
