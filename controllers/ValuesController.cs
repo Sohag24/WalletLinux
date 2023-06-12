@@ -15,7 +15,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using WalletApp.Helper;
-//using WalletApp.Migrations;
 using WalletApp.Model;
 
 namespace WebApplication2.controllers
@@ -192,9 +191,39 @@ namespace WebApplication2.controllers
                 dynamic responseData = JObject.Parse(response);
                 int VaultId = responseData.id;
 
-                var newVault = new VaultInfo() { VaultId = VaultId,UserId= data.userId, Tag = data.tag, Category = data.category };
+                var newVault = new VaultInfo() { VaultId = VaultId,UserId= data.userId, Tag = 0, Category =0  };
                 var VaultRepository = new Repository<VaultInfo>(_dbContext);
-                var savedUser = await VaultRepository.SaveAsync(newVault);
+                var savedVault = await VaultRepository.SaveAsync(newVault);
+
+                //Save Tag
+
+                string tags = data.tag;
+                if(tags != "") {
+                    string[] tagsArray = tags.Split(',');
+                    foreach( string tag in tagsArray )
+                    {
+                        var newData = new VaultWiseTags() { VaultId = VaultId, TagId= Convert.ToInt32(tag) };
+                        var VWRepository = new Repository<VaultWiseTags>(_dbContext);
+                        var savedt = await VWRepository.SaveAsync(newData);
+                    }
+                }
+
+
+                //Save Category
+
+                string categories = data.category;
+                if (categories != "")
+                {
+                    string[] categoriesArray = categories.Split(',');
+                    foreach (string category in categoriesArray)
+                    {
+                        var newData = new VaultWiseCategories() { VaultId = VaultId, CategoryId = Convert.ToInt32(category) };
+                        var VWRepository = new Repository<VaultWiseCategories>(_dbContext);
+                        var savedt = await VWRepository.SaveAsync(newData);
+                    }
+                }
+
+
             }
             catch (Exception ex) { }
 

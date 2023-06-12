@@ -17,6 +17,10 @@ namespace WalletApp.Model
 
         public DbSet<Tokens> Tokens { get; set; }
 
+        public DbSet<VaultWiseCategories> VaultWiseCategories { get; set; }
+
+        public DbSet<VaultWiseTags> VaultWiseTags { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Other configurations...
