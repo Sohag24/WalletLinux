@@ -371,14 +371,12 @@ namespace WebApplication2.controllers
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
-            int VaultId = data.vaultId ?? 0;
-            int TagId = data.tagId ?? 0;
-            int CategoryId = data.categoryId ?? 0;
+           
+            string UserId = data.userId ?? 0;
 
             var vaultRepository = new Repository<VaultInfo>(_dbContext);
             var VaultInfo = vaultRepository.GetAllAsync().Result;
-            var Vault = VaultInfo.Where(a => (a.VaultId == VaultId || VaultId == 0)
-            && (a.Category == CategoryId || CategoryId==0) && (a.Tag==TagId || TagId==0) ).ToList();
+            var Vault = VaultInfo.Where(a => (a.UserId == UserId || UserId == "0") ).ToList();
 
             var categoryRepository = new Repository<Category>(_dbContext);
             var CategoryInfo = categoryRepository.GetAllAsync().Result;
@@ -386,9 +384,17 @@ namespace WebApplication2.controllers
             var tagRepository = new Repository<Tag>(_dbContext);
             var TagInfo = tagRepository.GetAllAsync().Result;
 
+            var vaultWiseCategoryRepository = new Repository<VaultWiseCategories>(_dbContext);
+            var vaultWiseCategory = vaultWiseCategoryRepository.GetAllAsync().Result;
+
+            var vaultWiseTagRepository = new Repository<VaultWiseTags>(_dbContext);
+            var vaultWiseTag = vaultWiseTagRepository.GetAllAsync().Result;
+
             var result = from v in Vault
-                         join c in CategoryInfo on v.Category equals c.Id
-                         join t in TagInfo on v.Tag equals t.Id
+                         join vc in vaultWiseCategory on v.VaultId equals vc.VaultId
+                         join vt in vaultWiseTag on v.VaultId equals vt.VaultId
+                         join c in CategoryInfo on vc.CategoryId equals c.Id
+                         join t in TagInfo on vt.TagId equals t.Id                       
                          select new VaultInfoDTO { vaultId=v.VaultId, tag=t.Name, category=c.Name };
 
 
