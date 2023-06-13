@@ -395,7 +395,7 @@ namespace WebApplication2.controllers
                          join vt in vaultWiseTag on v.VaultId equals vt.VaultId
                          join c in CategoryInfo on vc.CategoryId equals c.Id
                          join t in TagInfo on vt.TagId equals t.Id                       
-                         select new VaultInfoDTO { vaultId=v.VaultId, tag=t.Name, category=c.Name };
+                         select new VaultInfoDTO { vaultId=v.VaultId,tagId=t.Id, tag=t.Name,categoryId=c.Id, category=c.Name };
 
 
             if (result == null)
