@@ -43,7 +43,6 @@ namespace WebApplication2.controllers
         [HttpGet("GetDate")]
         public string GetDate()
         {
-
             return GetUTCDateTime().ToString();
         }
 
@@ -51,7 +50,6 @@ namespace WebApplication2.controllers
         [HttpGet("GetDate2")]
         public string GetDate2()
         {
-
             return GetUTCDateTime2().ToString();
         }
 
@@ -70,11 +68,11 @@ namespace WebApplication2.controllers
                 var newData = new AccountInfo() { AccountType = Accounttype, UserId = userId };
                 var Repository = new Repository<AccountInfo>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
-                Response.StatusCode = 200; // Set the HTTP status code to 403
+                Response.StatusCode = 200; // Set the HTTP status code to 200
                 return "Account Creation Successfull!";
             }
             catch (Exception ex) {
-                Response.StatusCode = 500; // Set the HTTP status code to 403
+                Response.StatusCode = 500; // Set the HTTP status code to 500
                 return "Account Creation Failed! Exception: "+ex.Message;
             }
 
@@ -95,12 +93,12 @@ namespace WebApplication2.controllers
                 var newData = new Category() { Name = Name, UserId = userId };
                 var Repository = new Repository<Category>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
-                Response.StatusCode = 200; // Set the HTTP status code to 403
+                Response.StatusCode = 200; // Set the HTTP status code to 200
                 return "Category Creation Successfull!";
             }
             catch (Exception ex)
             {
-                Response.StatusCode = 500; // Set the HTTP status code to 403
+                Response.StatusCode = 500; // Set the HTTP status code to 500
                 return "Category Creation Failed! Exception: " + ex.Message;
             }
 
@@ -121,12 +119,12 @@ namespace WebApplication2.controllers
                 var newData = new Tag() { Name = Name, UserId = userId };
                 var Repository = new Repository<Tag>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
-                Response.StatusCode = 200; // Set the HTTP status code to 403
+                Response.StatusCode = 200; // Set the HTTP status code to 200
                 return "Tag Creation Successfull!";
             }
             catch (Exception ex)
             {
-                Response.StatusCode = 500; // Set the HTTP status code to 403
+                Response.StatusCode = 500; // Set the HTTP status code to 500
                 return "Tag Creation Failed! Exception: " + ex.Message;
             }
 
@@ -149,6 +147,7 @@ namespace WebApplication2.controllers
             var aRepository = new Repository<AccountInfo>(_dbContext);
             var AccountInfo = aRepository.GetAllAsync().Result;
             var Account = AccountInfo.Where(a => a.UserId == userId).FirstOrDefault();
+
             string AccountType = "Personal";
             if(Account!= null)
             {
@@ -181,6 +180,7 @@ namespace WebApplication2.controllers
             }
             else{}
 
+            // Create Vault in Fireblocks
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             var response = await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
 
@@ -995,24 +995,8 @@ namespace WebApplication2.controllers
             var apiResponse = httpClient.GetAsync(apiUrl).Result;
             string responseContent = apiResponse.Content.ReadAsStringAsync().Result;
 
-            //dynamic tokenList = JsonConvert.DeserializeObject<dynamic>(responseContent);
-
-            //var FindFormAddr = tokenList.Tokens.Where(a => a.symbol == RealAssetId).FirstOrDefault();
-            // Deserialize the JSON string into RootObject
-
             TokenList tokenList = JsonConvert.DeserializeObject<TokenList>(responseContent);
-            /*
-            foreach (var kvp in tokenList.Tokens)
-            {
-                if (kvp.Value.Symbol == RealAssetId)
-                {
-                    string address = kvp.Value.Address;
-                    int decimals = kvp.Value.Decimals;
-                    fromToken = address;
-                    amounts = "1" + new string('0', decimals);
-                }
-            }
-            */
+            
             Token matchingToken = tokenList.Tokens.Values.FirstOrDefault(token => token.Symbol == RealAssetId);
             if (matchingToken != null)
             {
@@ -1023,16 +1007,7 @@ namespace WebApplication2.controllers
 
             }
 
-
-                /*
-                            if (filteredRootObject != null)
-                            {
-                                fromToken = filteredRootObject.Tokens[0].address;//FindFormAddr.address;
-                                amounts = "1" + new string('0', filteredRootObject.Tokens[0].desimals);
-                            }
-                */
-
-                // Your JSON object
+            // Your JSON object
             var jsonObject = new
             {
                 networkid = "1",
@@ -1102,53 +1077,33 @@ namespace WebApplication2.controllers
         public static DateTime GetUTCDateTime()
         {
             var httpClient = new HttpClient();
-
             // Set the URL of the World Time API endpoint
             var apiUrl = "http://worldtimeapi.org/api/timezone/Asia/Dhaka";
-
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.GetAsync(apiUrl).Result;
-
             // Read the response content as a string
             var responseContent = response.Content.ReadAsStringAsync().Result;
-
             var jsonObject = JObject.Parse(responseContent);
-
             // Get the value of the "name" variable as a string
-            var utc_datetime = (DateTime)jsonObject["utc_datetime"];
-
-
-            // Parse the response JSON to get the current UTC datetime
-            //var dateTimeUtc = JsonConvert.DeserializeObject<string>(responseContent);
+            var utc_datetime = (DateTime)jsonObject["utc_datetime"];         
 
             return utc_datetime;
-
         }
 
         public static DateTime GetUTCDateTime2()
         {
             var httpClient = new HttpClient();
-
             // Set the URL of the World Time API endpoint
             var apiUrl = "https://worldtimeapi.org/api/timezone/Asia/Dhaka";
-
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.GetAsync(apiUrl).Result;
-
             // Read the response content as a string
             var responseContent = response.Content.ReadAsStringAsync().Result;
-
             var jsonObject = JObject.Parse(responseContent);
-
             // Get the value of the "name" variable as a string
             var utc_datetime = (DateTime)jsonObject["utc_datetime"];
 
-
-            // Parse the response JSON to get the current UTC datetime
-            //var dateTimeUtc = JsonConvert.DeserializeObject<string>(responseContent);
-
             return utc_datetime;
-
         }
 
 
@@ -1156,7 +1111,7 @@ namespace WebApplication2.controllers
         [HttpGet("GetTokensPrice")]
         public async Task<string> GetTokensPrice()
         {
-           CoinMarket_GateWay CG=new CoinMarket_GateWay(_configuration);
+            CoinMarket_GateWay CG=new CoinMarket_GateWay(_configuration);
             return await CG.CallApi(EndPoints.TokensPrice, ApiMethods.Get);
         }
 
@@ -1187,20 +1142,15 @@ namespace WebApplication2.controllers
         public string GetPlaidToken([FromBody] JsonElement body)
         {
             var httpClient = new HttpClient();
-
             // Set the URL of the World Time API endpoint
             var apiUrl = "https://sandbox.plaid.com/link/token/create";
-
             var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
-
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
-
             // Read the response content as a string
             var responseContent = response.Content.ReadAsStringAsync().Result;
 
             return responseContent;
-
         }
 
 
@@ -1214,13 +1164,9 @@ namespace WebApplication2.controllers
             var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
-
             // Read the response content as a string
             dynamic responseContent = response.Content.ReadAsStringAsync().Result;
-
-            JsonDocument jsonDocument = JsonDocument.Parse(responseContent);
-
-            //// Extracting statuses
+            JsonDocument jsonDocument = JsonDocument.Parse(responseContent);        
            // Extracting statuses
             string kycStatus = jsonDocument.RootElement
                 .GetProperty("identity_verifications")[0]
@@ -1232,7 +1178,6 @@ namespace WebApplication2.controllers
                 string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
                 dynamic data = JObject.Parse(BodyStr);
                 string guid = data.client_user_id;
-
                 // Set the URL of the World Time API endpoint
                 apiUrl = "https://clearchainx-dev-web-app-api.azurewebsites.net/wallet/idv?guid="+ guid + "&status=active";
                 // Send an HTTP GET request to the API endpoint and get the response
@@ -1244,8 +1189,7 @@ namespace WebApplication2.controllers
             {
                 Response.StatusCode= 500;
                 return response.ToString();
-            }
-            //return responseContent;
+            }       
 
         }
 
