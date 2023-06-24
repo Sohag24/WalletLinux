@@ -1074,6 +1074,28 @@ namespace WebApplication2.controllers
             return await FG.CallApi(endPoint, ApiMethods.Post, body);
         }
 
+        [HttpPost("SetKytForVault")]
+        public async Task<string> SetKytForVault([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.VaultCreate + "/" + data.vaultAccountId + "/set_customer_ref_id";
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
+        }
+
+        [HttpPost("SetKytForInternalWallet")]
+        public async Task<string> SetKytForInternalWallet([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+            string endPoint = EndPoints.InternalWallets + "/" + data.walletId + "/set_customer_ref_id";
+
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(endPoint, ApiMethods.Post, body);
+        }
+
         public static DateTime GetUTCDateTime()
         {
             var httpClient = new HttpClient();
