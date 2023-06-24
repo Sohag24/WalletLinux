@@ -1165,7 +1165,7 @@ namespace WebApplication2.controllers
         {
             var httpClient = new HttpClient();
             // Set the URL of the World Time API endpoint
-            var apiUrl = "https://sandbox.plaid.com/link/token/create";
+            var apiUrl = "https://development.plaid.com/link/token/create";
             var jsonContent = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
             // Send an HTTP GET request to the API endpoint and get the response
             var response = httpClient.PostAsync(apiUrl, jsonContent).Result;
