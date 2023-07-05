@@ -1,7 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 public class RestApiClient
@@ -14,23 +18,26 @@ public class RestApiClient
         this.httpClient.BaseAddress = new Uri(baseUrl);
     }
 
-    public async Task<string> GetAsync(string endpoint, string authorizationToken, string headerName, string headerValue)
+    public async Task<JsonResult> GetAsync(string endpoint, string authorizationToken, string headerName, string headerValue)
     {
         AddAuthorizationHeader(authorizationToken);
         AddCustomHeader(headerName, headerValue);
 
         HttpResponseMessage response = await httpClient.GetAsync(endpoint);
         string responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"API call failed with status code {response.StatusCode}. Response body: {responseBody}");
+            string FullResponse=$"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
+            string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+            return JsonData(null, messageValue);
         }
 
-        return responseBody;
+        return JsonData(responseJson, null);
     }
 
-    public async Task<string> PostAsync(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
+    public async Task<JsonResult> PostAsync(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
     {
         AddAuthorizationHeader(authorizationToken);
         AddCustomHeader(headerName, headerValue);
@@ -40,18 +47,19 @@ public class RestApiClient
 
         HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
         string responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"API call failed with status code {response.StatusCode}.  Token: {authorizationToken}  Response body: {responseBody}");
-            //throw new Exception($"{ responseBody }");
-            //return responseBody;
+            string FullResponse = $"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
+            string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+            return JsonData(null, messageValue);
         }
 
-        return responseBody;
+        return JsonData(responseJson, null);
     }
 
-    public async Task<string> PutAsync(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
+    public async Task<JsonResult> PutAsync(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
     {
         AddAuthorizationHeader(authorizationToken);
         AddCustomHeader(headerName, headerValue);
@@ -61,29 +69,35 @@ public class RestApiClient
 
         HttpResponseMessage response = await httpClient.PutAsync(endpoint, content);
         string responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"API call failed with status code {response.StatusCode}. Response body: {responseBody}");
+            string FullResponse = $"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
+            string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+            return JsonData(null, messageValue);
         }
 
-        return responseBody;
+        return JsonData(responseJson, null);
     }
 
-    public async Task<string> DeleteAsync(string endpoint, string authorizationToken, string headerName, string headerValue)
+    public async Task<JsonResult> DeleteAsync(string endpoint, string authorizationToken, string headerName, string headerValue)
     {
         AddAuthorizationHeader(authorizationToken);
         AddCustomHeader(headerName, headerValue);
 
         HttpResponseMessage response = await httpClient.DeleteAsync(endpoint);
         string responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"API call failed with status code {response.StatusCode}. Token: {authorizationToken} Response body: {responseBody}");
+            string FullResponse = $"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
+            string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+            return JsonData(null, messageValue);
         }
 
-        return responseBody;
+        return JsonData(responseJson, null);
     }
 
     private void AddAuthorizationHeader(string authorizationToken)
@@ -100,5 +114,10 @@ public class RestApiClient
         {
             httpClient.DefaultRequestHeaders.Add(headerName, headerValue);
         }
+    }
+
+    public JsonResult JsonData(dynamic? data = null, dynamic? message = null)
+    {
+        return new JsonResult(new { data = data, message = message });
     }
 }

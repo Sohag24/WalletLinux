@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using WalletApp.Helper;
 using WalletApp.Model;
@@ -14,7 +15,7 @@ namespace WalletApp.Helper
         {
             _configuration = configuration;
         }
-        public async Task<string> CallApi(string EndPoint,string ApiMethod,JsonElement body)
+        public async Task<JsonResult> CallApi(string EndPoint,string ApiMethod,JsonElement body)
         {
             Configuration con = new Configuration(_configuration);
             ConfigurationDTO configuration = con.getConfiguration();
@@ -40,14 +41,24 @@ namespace WalletApp.Helper
             }
             else if(ApiMethod == ApiMethods.Put)
             {
-                return await Task.FromResult<string>("Not Implemented");
+                return new JsonResult(new
+                {
+                    data = string.Empty,
+                    message = string.Empty
+                });
+                
             }
             else if(ApiMethod == ApiMethods.Delete)
             {
                 return await ApiClient.DeleteAsync(endPoint,token, "X-API-Key", key);
             }
             else {
-                return await Task.FromResult<string>("Not Implemented");
+
+                return new JsonResult(new
+                {
+                    data = string.Empty,
+                    message = string.Empty
+                });
             }
         }
     }

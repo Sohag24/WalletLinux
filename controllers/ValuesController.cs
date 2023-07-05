@@ -55,7 +55,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("CreateAccount")]
-        public async Task<string> CreateAccount([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateAccount([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -68,19 +68,19 @@ namespace WebApplication2.controllers
                 var newData = new AccountInfo() { AccountType = Accounttype, UserId = userId };
                 var Repository = new Repository<AccountInfo>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
-                Response.StatusCode = 200; // Set the HTTP status code to 200
-                return "Account Creation Successfull!";
+                Response.StatusCode = 200; // Set the HTTP status code to 200             
+                return JsonData(null,"Account created successfully");
             }
             catch (Exception ex) {
                 Response.StatusCode = 500; // Set the HTTP status code to 500
-                return "Account Creation Failed! Exception: "+ex.Message;
+                return JsonData(null, ex.Message);
             }
 
         }
 
         // POST api/<WalletController>
         [HttpPost("CreateCategory")]
-        public async Task<string> CreateCategory([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateCategory([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -94,19 +94,19 @@ namespace WebApplication2.controllers
                 var Repository = new Repository<Category>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
                 Response.StatusCode = 200; // Set the HTTP status code to 200
-                return "Category Creation Successfull!";
+                return JsonData(null,"Category Creation Successfull!");
             }
             catch (Exception ex)
             {
-                Response.StatusCode = 500; // Set the HTTP status code to 500
-                return "Category Creation Failed! Exception: " + ex.Message;
+                Response.StatusCode = 500; // Set the HTTP status code to 500               
+                return JsonData(null,ex.Message);
             }
 
         }
 
         // POST api/<WalletController>
         [HttpPost("CreateTag")]
-        public async Task<string> CreateTag([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateTag([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -120,12 +120,14 @@ namespace WebApplication2.controllers
                 var Repository = new Repository<Tag>(_dbContext);
                 var savedUser = await Repository.SaveAsync(newData);
                 Response.StatusCode = 200; // Set the HTTP status code to 200
-                return "Tag Creation Successfull!";
+                
+                return JsonData(null,"Tag Creation Successfull!");
+                
             }
             catch (Exception ex)
             {
                 Response.StatusCode = 500; // Set the HTTP status code to 500
-                return "Tag Creation Failed! Exception: " + ex.Message;
+                return JsonData(null,"Tag Creation Failed! Exception: " + ex.Message);
             }
 
         }
@@ -133,7 +135,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("CreateVault")]
-        public async Task<string> CreateVault([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateVault([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -162,17 +164,17 @@ namespace WebApplication2.controllers
             if (SubscriptionLevel == "FREE" && VautlCount >= 1)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports 1 vaults.  If you would like to add further vault accounts please ";
+                return JsonData(null,"Your account only supports 1 vaults.  If you would like to add further vault accounts please");
             }
             else if(SubscriptionLevel=="SILVER" && VautlCount>=2)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports 2 vaults.  If you would like to add further vault accounts please ";
+                return JsonData(null,"Your account only supports 2 vaults.  If you would like to add further vault accounts please ");
             }
             else if (SubscriptionLevel == "GOLD" && VautlCount >= goldAmount)
             {
                 Response.StatusCode = 403; // Set the HTTP status code to 403
-                return "Your account only supports "+ goldAmount + " vaults.  If you would like to add further vault accounts please ";
+                return JsonData(null,"Your account only supports "+ goldAmount + " vaults.  If you would like to add further vault accounts please ");
             }
             else if (SubscriptionLevel == "PLATINUM")
             {
@@ -188,38 +190,46 @@ namespace WebApplication2.controllers
             // Add Vault Info . . .
             try
             {
-                dynamic responseData = JObject.Parse(response);
-                int VaultId = responseData.id;
+              
+                string jsonString = JsonConvert.SerializeObject(response.Value);
+                dynamic responseData = JObject.Parse(jsonString);
 
-                var newVault = new VaultInfo() { VaultId = VaultId,UserId= data.userId, Tag = 0, Category =0  };
-                var VaultRepository = new Repository<VaultInfo>(_dbContext);
-                var savedVault = await VaultRepository.SaveAsync(newVault);
-
-                //Save Tag
-
-                string tags = data.tag;
-                if(tags != "") {
-                    string[] tagsArray = tags.Split(',');
-                    foreach( string tag in tagsArray )
-                    {
-                        var newData = new VaultWiseTags() { VaultId = VaultId, TagId= Convert.ToInt32(tag) };
-                        var VWRepository = new Repository<VaultWiseTags>(_dbContext);
-                        var savedt = await VWRepository.SaveAsync(newData);
-                    }
-                }
-
-
-                //Save Category
-
-                string categories = data.category;
-                if (categories != "")
+                if (responseData.data != null)
                 {
-                    string[] categoriesArray = categories.Split(',');
-                    foreach (string category in categoriesArray)
+
+                    int VaultId = responseData.data.id;
+
+                    var newVault = new VaultInfo() { VaultId = VaultId, UserId = data.userId, Tag = 0, Category = 0 };
+                    var VaultRepository = new Repository<VaultInfo>(_dbContext);
+                    var savedVault = await VaultRepository.SaveAsync(newVault);
+
+                    //Save Tag
+
+                    string tags = data.tag;
+                    if (tags != "")
                     {
-                        var newData = new VaultWiseCategories() { VaultId = VaultId, CategoryId = Convert.ToInt32(category) };
-                        var VWRepository = new Repository<VaultWiseCategories>(_dbContext);
-                        var savedt = await VWRepository.SaveAsync(newData);
+                        string[] tagsArray = tags.Split(',');
+                        foreach (string tag in tagsArray)
+                        {
+                            var newData = new VaultWiseTags() { VaultId = VaultId, TagId = Convert.ToInt32(tag) };
+                            var VWRepository = new Repository<VaultWiseTags>(_dbContext);
+                            var savedt = await VWRepository.SaveAsync(newData);
+                        }
+                    }
+
+
+                    //Save Category
+
+                    string categories = data.category;
+                    if (categories != "")
+                    {
+                        string[] categoriesArray = categories.Split(',');
+                        foreach (string category in categoriesArray)
+                        {
+                            var newData = new VaultWiseCategories() { VaultId = VaultId, CategoryId = Convert.ToInt32(category) };
+                            var VWRepository = new Repository<VaultWiseCategories>(_dbContext);
+                            var savedt = await VWRepository.SaveAsync(newData);
+                        }
                     }
                 }
 
@@ -227,19 +237,19 @@ namespace WebApplication2.controllers
             }
             catch (Exception ex) { }
 
-            return response.ToString();
+            return response;
         }
 
         [HttpGet("GetVaults")]
-        public async Task<string> GetVaults()
+        public async Task<IActionResult> GetVaults()
         {
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
+            return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);         
         }
 
         [HttpPost("GetAssetPercentage")]
-        public async Task<string> GetAssetPercentage([FromBody] JsonElement body)
+        public async Task<IActionResult> GetAssetPercentage([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -250,9 +260,10 @@ namespace WebApplication2.controllers
             JsonElement EmptyJsons = new JsonElement();
             FireBlocks_GateWay FGs = new FireBlocks_GateWay(_configuration);
             var jsons = await FGs.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJsons);
-
+            var jsonDatas=((dynamic)jsons.Value).data;
+            string jsonString = JsonConvert.SerializeObject(jsonDatas);
             // Deserialize the JSON string into RootObject
-            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsons);
+            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsonString);
 
             // Create a new RootObject with filtered accounts
             Vaults filteredRootObject = new Vaults
@@ -313,16 +324,13 @@ namespace WebApplication2.controllers
             resultObject.totalBalance = totalBalance;
             resultObject.assetPercentages = assetPercentages;
 
-            // Convert JSON object to string
-            string jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(resultObject);
-
-            return jsonString;
+            return JsonData(resultObject,null);
 
         }
 
          // GET api/<WalletController>
         [HttpPost("GetVaultsByVaultId")]
-        public async Task<string> GetVaultsByVaultId([FromBody] JsonElement body)
+        public async Task<IActionResult> GetVaultsByVaultId([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -336,7 +344,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("GetTags")]
-        public List<Tag> GetTags([FromBody] JsonElement body)
+        public  IActionResult GetTags([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -347,11 +355,11 @@ namespace WebApplication2.controllers
             var Info = Repository.GetAllAsync().Result;
             var Data = Info.Where(d=>d.UserId == userId).ToList();
 
-            return Data;
+            return JsonData(Data,null); 
         }
 
         [HttpPost("GetCategories")]
-        public List<Category> GetCategories([FromBody] JsonElement body)
+        public IActionResult GetCategories([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -362,12 +370,12 @@ namespace WebApplication2.controllers
             var Info = Repository.GetAllAsync().Result;
             var Data = Info.Where(d => d.UserId == userId).ToList();
 
-            return Data;
+            return JsonData(Data, null);
         }
 
         // GET api/<WalletController>
         [HttpPost("GetVaultInfo")]
-        public List<VaultInfoDTO> GetVaultInfo([FromBody] JsonElement body)
+        public IActionResult GetVaultInfo([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -400,11 +408,11 @@ namespace WebApplication2.controllers
 
             if (result == null)
             {
-                return new List<VaultInfoDTO>();
+                return JsonData(new List<VaultInfoDTO>(),null);
             }
             else
             {
-                return result.ToList();
+                return JsonData(result.ToList(),null);
             }
 
             
@@ -412,7 +420,7 @@ namespace WebApplication2.controllers
 
         // Get api/<WalletController>
         [HttpGet("GetSupportedAssets")]
-        public async Task<string> GetSupportedAssets()
+        public async Task<IActionResult> GetSupportedAssets()
         {
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
@@ -421,7 +429,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("AddAssets")]
-        public async Task<string> AddAssets([FromBody] JsonElement body)
+        public async Task<IActionResult> AddAssets([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -452,7 +460,7 @@ namespace WebApplication2.controllers
 
 
         [HttpPost("HideVault")]
-        public async Task<string> HideVault([FromBody] JsonElement body)
+        public async Task<IActionResult> HideVault([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -463,7 +471,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("UnhideVault")]
-        public async Task<string> UnhideVault([FromBody] JsonElement body)
+        public async Task<IActionResult> UnhideVault([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -474,7 +482,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("SetAutoFuel")]
-        public async Task<string> SetAutoFuel([FromBody] JsonElement body)
+        public async Task<IActionResult> SetAutoFuel([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -485,7 +493,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("Activate")]
-        public async Task<string> Activate([FromBody] JsonElement body)
+        public async Task<IActionResult> Activate([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -496,7 +504,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpGet("GetTransactions")]
-        public async Task<string> GetTransactions()
+        public async Task<IActionResult> GetTransactions()
         {
             var QueryString = HttpContext.Request.QueryString;
             string endPoint = EndPoints.Transactions + QueryString;
@@ -506,7 +514,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("GetActiveTransactions")]
-        public async Task<string> GetActiveTransactions([FromBody] JsonElement body)
+        public async Task<IActionResult> GetActiveTransactions([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -526,9 +534,10 @@ namespace WebApplication2.controllers
             // If there are active transactions
             if (ActiveTransactions != null)
             {
-
+                var jsonDatas = ((dynamic)transactionResp.Value).data;
+               
                 // Deserialize the JSON object
-                List<dynamic> rootObject = JsonConvert.DeserializeObject<List<dynamic>>(transactionResp);
+                List<dynamic> rootObject = JsonConvert.DeserializeObject<List<dynamic>>(jsonDatas);
 
                 // Join the JSON object with the active transactions
                 //List<dynamic> filteredRootObject = rootObject.Join(
@@ -550,7 +559,7 @@ namespace WebApplication2.controllers
                 string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
 
                 // Return the filtered JSON object
-                return filteredJson;
+                return JsonData(filteredJson,null);
 
             }
             else
@@ -560,7 +569,7 @@ namespace WebApplication2.controllers
 
         }
 
-        public  async Task<string> SendMail(List<dynamic> TransferList,string userId)
+        public  async Task<IActionResult> SendMail(List<dynamic> TransferList,string userId)
         {
             try
             {
@@ -608,16 +617,16 @@ namespace WebApplication2.controllers
 
                 }
 
-                return "Ok";
+                return JsonData(null,"Ok");
 
             }
-            catch (Exception ex) { return "Not Ok"; }
+            catch (Exception ex) { return JsonData(null,"Not Ok"); }
         }
 
       
 
         [HttpPost("GetTransactionAmount")]
-        public TransactionInfoDTO GetTransactionAmount([FromBody] JsonElement body)
+        public IActionResult GetTransactionAmount([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -631,20 +640,20 @@ namespace WebApplication2.controllers
             decimal OutAmount = 0;
             if (Data==null)
             {
-                return new TransactionInfoDTO();
+                return JsonData(new TransactionInfoDTO(),null);
             }
             else
             {
                 InAmount=Data.Where(a=>a.TransactionType=="IN").Sum(a=>a.Amount);
                 OutAmount = Data.Where(a => a.TransactionType == "OUT").Sum(a => a.Amount);
-                return new TransactionInfoDTO() { UserId=data.UserId,InAmount= InAmount ,OutAmount= OutAmount ,FrozenAmount=0};
+                return JsonData( new TransactionInfoDTO() { UserId=data.UserId,InAmount= InAmount ,OutAmount= OutAmount ,FrozenAmount=0},null);
             }
 
             //return Data;
         }
 
         [HttpPost("TransactionEstimateFee")]
-        public async Task<string> TransactionEstimateFee([FromBody] JsonElement body)
+        public async Task<IActionResult> TransactionEstimateFee([FromBody] JsonElement body)
         {
             
             string endPoint = EndPoints.Transactions + "/estimate_fee";
@@ -654,7 +663,7 @@ namespace WebApplication2.controllers
 
         // GET api/<WalletController>
         [HttpPost("GetTransactionById")]
-        public async Task<string> GetTransactionById([FromBody] JsonElement body)
+        public async Task<IActionResult> GetTransactionById([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -667,7 +676,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpGet("GetInternalWallets")]
-        public async Task<string> GetInternalWallets()
+        public async Task<IActionResult> GetInternalWallets()
         {
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
@@ -675,7 +684,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpGet("GetExternalWallets")]
-        public async Task<string> GetExternalWallets()
+        public async Task<IActionResult> GetExternalWallets()
         {
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
@@ -683,7 +692,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpGet("GetContracts")]
-        public async Task<string> GetContracts()
+        public async Task<IActionResult> GetContracts()
         {
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
@@ -692,7 +701,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("CreateInternalWallet")]
-        public async Task<string> CreateInternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateInternalWallet([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(EndPoints.InternalWallets, ApiMethods.Post, body);
@@ -700,7 +709,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteInternalWallet")]
-        public async Task<string> DeleteInternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteInternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -712,7 +721,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteAssetInternalWallet")]
-        public async Task<string> DeleteAssetInternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteAssetInternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -724,7 +733,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("CreateExternalWallet")]
-        public async Task<string> CreateExternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateExternalWallet([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(EndPoints.ExternalWallets, ApiMethods.Post, body);
@@ -732,7 +741,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteExternalWallet")]
-        public async Task<string> DeleteExternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteExternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -744,7 +753,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteAssetExternalWallet")]
-        public async Task<string> DeleteAssetExternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteAssetExternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -756,7 +765,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("CreateContracts")]
-        public async Task<string> CreateContracts([FromBody] JsonElement body)
+        public async Task<IActionResult> CreateContracts([FromBody] JsonElement body)
         {
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
             return await FG.CallApi(EndPoints.Contracts, ApiMethods.Post, body);
@@ -764,7 +773,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteContracts")]
-        public async Task<string> DeleteContracts([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteContracts([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -776,7 +785,7 @@ namespace WebApplication2.controllers
 
         // Delete api/<WalletController>
         [HttpPost("DeleteAssetContracts")]
-        public async Task<string> DeleteAssetContracts([FromBody] JsonElement body)
+        public async Task<IActionResult> DeleteAssetContracts([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -788,7 +797,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("AddAssetsInternalWallet")]
-        public async Task<string> AddAssetsInternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> AddAssetsInternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -820,7 +829,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("AddAssetsExternalWallet")]
-        public async Task<string> AddAssetsExternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> AddAssetsExternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -851,7 +860,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("AddAssetsContract")]
-        public async Task<string> AddAssetsContract([FromBody] JsonElement body)
+        public async Task<IActionResult> AddAssetsContract([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -883,7 +892,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("GetAssetDepositAddress")]
-        public async Task<string> GetAssetDepositAddress([FromBody] JsonElement body)
+        public async Task<IActionResult> GetAssetDepositAddress([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -899,7 +908,7 @@ namespace WebApplication2.controllers
 
         // POST api/<WalletController>
         [HttpPost("transactions")]
-        public async Task<string> transactions([FromBody] JsonElement body)
+        public async Task<IActionResult> transactions([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -912,7 +921,9 @@ namespace WebApplication2.controllers
             // Add Transaction Info . . .
             try
             {
-                JObject transaction = JObject.Parse(TransactionResp);
+                var jsonDatas = ((dynamic)TransactionResp.Value).data;
+
+                JObject transaction = JObject.Parse(jsonDatas);
                 var txId = transaction["id"].ToString();
 
                 var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount,txId= txId,IsActive=true };
@@ -937,7 +948,7 @@ namespace WebApplication2.controllers
         }
 
 
-        public async Task<string> TransactionFeeTransfer(dynamic data)
+        public async Task<IActionResult> TransactionFeeTransfer(dynamic data)
         {
             try
             {
@@ -969,7 +980,7 @@ namespace WebApplication2.controllers
 
                 return TransactionResp;
 
-            } catch (Exception ex) { return ""; }  
+            } catch (Exception ex) { return JsonData(null,null); }  
         }
 
         // Get Convertion Rate
@@ -1053,7 +1064,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("FreezeTransaction")]
-        public async Task<string> FreezeTransaction([FromBody] JsonElement body)
+        public async Task<IActionResult> FreezeTransaction([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -1064,7 +1075,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("UnfreezeTransaction")]
-        public async Task<string> UnfreezeTransaction([FromBody] JsonElement body)
+        public async Task<IActionResult> UnfreezeTransaction([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -1075,7 +1086,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("SetKytForVault")]
-        public async Task<string> SetKytForVault([FromBody] JsonElement body)
+        public async Task<IActionResult> SetKytForVault([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -1086,7 +1097,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("SetKytForInternalWallet")]
-        public async Task<string> SetKytForInternalWallet([FromBody] JsonElement body)
+        public async Task<IActionResult> SetKytForInternalWallet([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -1131,14 +1142,14 @@ namespace WebApplication2.controllers
 
         // Coin Market API
         [HttpGet("GetTokensPrice")]
-        public async Task<string> GetTokensPrice()
+        public async Task<IActionResult> GetTokensPrice()
         {
             CoinMarket_GateWay CG=new CoinMarket_GateWay(_configuration);
             return await CG.CallApi(EndPoints.TokensPrice, ApiMethods.Get);
         }
 
         [HttpGet("GetPriceView")]
-        public async Task<string> GetPriceView()
+        public async Task<IActionResult> GetPriceView()
         {
             var QueryString = HttpContext.Request.QueryString;
             string endPoint = EndPoints.PriceView + QueryString;
@@ -1148,7 +1159,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpGet("GetAssetMarketCap")]
-        public async Task<string> GetAssetMarketCap()
+        public async Task<IActionResult> GetAssetMarketCap()
         {
             var QueryString = HttpContext.Request.QueryString;
             string endPoint = EndPoints.AssetMarketCap + QueryString;
@@ -1161,7 +1172,7 @@ namespace WebApplication2.controllers
         // Plaid .........
 
         [HttpPost("GetPlaidToken")]
-        public string GetPlaidToken([FromBody] JsonElement body)
+        public IActionResult GetPlaidToken([FromBody] JsonElement body)
         {
             var httpClient = new HttpClient();
             // Set the URL of the World Time API endpoint
@@ -1172,12 +1183,12 @@ namespace WebApplication2.controllers
             // Read the response content as a string
             var responseContent = response.Content.ReadAsStringAsync().Result;
 
-            return responseContent;
+            return JsonData(responseContent,null);
         }
 
 
         [HttpPost("UpdatePlaidStatus")]
-        public string UpdatePlaidStatus([FromBody] JsonElement body)
+        public IActionResult UpdatePlaidStatus([FromBody] JsonElement body)
         {
             var httpClient = new HttpClient();
 
@@ -1204,20 +1215,29 @@ namespace WebApplication2.controllers
                 apiUrl = "https://clearchainx-production-api.azurewebsites.net/wallet/idv?guid=" + guid + "&status=active";
                 // Send an HTTP GET request to the API endpoint and get the response
                 var apiResponse = httpClient.PostAsync(apiUrl, jsonContent).Result;
-                Response.StatusCode = 200;
-                return apiResponse.ToString();
+                if (apiResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    Response.StatusCode = 200;
+                    return JsonData(null, "Plaid Status is success!");
+                }
+                else
+                {
+                    Response.StatusCode = 202;
+                    return JsonData(null, "Plaid Status is success but update failed!");
+                }
+
             }
             else
             {
-                Response.StatusCode= 500;
-                return response.ToString();
+                Response.StatusCode= 202;
+                return JsonData(null,"Plaid Status is Failed!");
             }       
 
         }
 
 
         [HttpPost("RestCall")]
-        public string RestCall([FromBody] JsonElement body)
+        public IActionResult RestCall([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -1247,6 +1267,11 @@ namespace WebApplication2.controllers
 
         }
 
+
+        public JsonResult JsonData (dynamic? data=null, string? message=null)
+        {
+            return new JsonResult(new { data = data, message = message });
+        }
 
 
     }
