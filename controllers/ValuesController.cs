@@ -259,11 +259,11 @@ namespace WebApplication2.controllers
 
             JsonElement EmptyJsons = new JsonElement();
             FireBlocks_GateWay FGs = new FireBlocks_GateWay(_configuration);
-            var jsons = await FGs.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJsons);
-            var jsonDatas=((dynamic)jsons.Value).data;
-            string jsonString = JsonConvert.SerializeObject(jsonDatas);
+            var jsons = await FGs.CallApi_String(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJsons);
+
+
             // Deserialize the JSON string into RootObject
-            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsonString);
+            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsons);
 
             // Create a new RootObject with filtered accounts
             Vaults filteredRootObject = new Vaults
@@ -910,20 +910,21 @@ namespace WebApplication2.controllers
         [HttpPost("transactions")]
         public async Task<IActionResult> transactions([FromBody] JsonElement body)
         {
+            var ErrorMsg = "";
+
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
 
             //TransactionFeeTransfer(data);
 
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            var TransactionResp= await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, body);
+            var TransactionResp= await FG.CallApi_String(EndPoints.Transaction, ApiMethods.Post, body);
 
             // Add Transaction Info . . .
             try
             {
-                var jsonDatas = ((dynamic)TransactionResp.Value).data;
-
-                JObject transaction = JObject.Parse(jsonDatas);
+       
+                JObject transaction = JObject.Parse(TransactionResp);
                 var txId = transaction["id"].ToString();
 
                 var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount,txId= txId,IsActive=true };
@@ -934,22 +935,24 @@ namespace WebApplication2.controllers
                 var txRepositoryTo = new Repository<TransactionInfo>(_dbContext);
                 var savedUserTo = await txRepositoryTo.SaveAsync(newTransactionTo);
             }
-            catch (Exception ex) { }
+            catch (Exception ex) { ErrorMsg += ex.Message; }
 
             // Transaction Fee . . .
             try
             {
-                TransactionFeeTransfer(data);
+                ErrorMsg+=TransactionFeeTransfer(data);
             }
             catch (Exception ex) { }
 
-            return TransactionResp;
+            return JsonData(TransactionResp, ErrorMsg);
 
         }
 
 
-        public async Task<IActionResult> TransactionFeeTransfer(dynamic data)
+        public async Task<string> TransactionFeeTransfer(dynamic data)
         {
+            var TrnsaferMsg = "";
+
             try
             {
 
@@ -976,11 +979,11 @@ namespace WebApplication2.controllers
                 JsonElement reversedElement = reversedBody.RootElement;
 
                 FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-                var TransactionResp = await FG.CallApi(EndPoints.Transaction, ApiMethods.Post, reversedElement);
+                var TransactionResp = await FG.CallApi_String(EndPoints.Transaction, ApiMethods.Post, reversedElement);
+                TrnsaferMsg += TrnsaferMsg;
+                return TrnsaferMsg;
 
-                return TransactionResp;
-
-            } catch (Exception ex) { return JsonData(null,null); }  
+            } catch (Exception ex) { TrnsaferMsg += ex.Message; return TrnsaferMsg; }  
         }
 
         // Get Convertion Rate

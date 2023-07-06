@@ -88,16 +88,54 @@ public class RestApiClient
 
         HttpResponseMessage response = await httpClient.DeleteAsync(endpoint);
         string responseBody = await response.Content.ReadAsStringAsync();
-        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+        //var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!response.IsSuccessStatusCode)
         {
             string FullResponse = $"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
-            string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
-            return JsonData(null, messageValue);
+            //string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+            return JsonData(null, responseBody);
         }
 
-        return JsonData(responseJson, null);
+        return JsonData("Delete Successful!", null);
+    }
+
+
+    public async Task<string> GetAsync_String(string endpoint, string authorizationToken, string headerName, string headerValue)
+    {
+        AddAuthorizationHeader(authorizationToken);
+        AddCustomHeader(headerName, headerValue);
+
+        HttpResponseMessage response = await httpClient.GetAsync(endpoint);
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"API call failed with status code {response.StatusCode}. Response body: {responseBody}");
+        }
+
+        return responseBody;
+    }
+
+    public async Task<string> PostAsync_String(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
+    {
+        AddAuthorizationHeader(authorizationToken);
+        AddCustomHeader(headerName, headerValue);
+
+        HttpContent content = new StringContent(body);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"API call failed with status code {response.StatusCode}.  Token: {authorizationToken}  Response body: {responseBody}");
+            //throw new Exception($"{ responseBody }");
+            //return responseBody;
+        }
+
+        return responseBody;
     }
 
     private void AddAuthorizationHeader(string authorizationToken)
