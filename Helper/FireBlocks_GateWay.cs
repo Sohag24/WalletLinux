@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using WalletApp.Helper;
@@ -93,6 +94,38 @@ namespace WalletApp.Helper
             {
                 return "";
             }
+        }
+
+
+        public async Task<HttpResponseMessage> CallApi_Response(string EndPoint, string ApiMethod, JsonElement body)
+        {
+            Configuration con = new Configuration(_configuration);
+            ConfigurationDTO configuration = con.getConfiguration();
+
+            string endPoint = EndPoint;
+            string BodyStr = "";
+            if (ApiMethod == ApiMethods.Post)
+            {
+                BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            }
+            string key = configuration.Key;
+            string baseurl = configuration.FireBlocks_BaseURL;
+            var token = JwtGenerator.GenerateJwtToken(endPoint, ApiMethod, BodyStr, key);
+
+            RestApiClient ApiClient = new RestApiClient(baseurl);
+            if (ApiMethod == ApiMethods.Get)
+            {
+                return await ApiClient.GetAsync_Response(endPoint, token, "X-API-Key", key);
+            }
+            else if(ApiMethod == ApiMethods.Post)
+            {
+                return await ApiClient.PostAsync_Response(endPoint, token, "X-API-Key", key, BodyStr);
+            }
+            else
+            {
+                return await ApiClient.PostAsync_Response(endPoint, token, "X-API-Key", key, BodyStr);
+            }
+            
         }
 
 

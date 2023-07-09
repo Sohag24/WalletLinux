@@ -914,44 +914,64 @@ namespace WebApplication2.controllers
 
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
-
-            //TransactionFeeTransfer(data);
-
-            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            var TransactionResp= await FG.CallApi_String(EndPoints.Transaction, ApiMethods.Post, body);
-
-            // Add Transaction Info . . .
-            try
-            {
-       
-                JObject transaction = JObject.Parse(TransactionResp);
-                var txId = transaction["id"].ToString();
-
-                var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = data.amount,txId= txId,IsActive=true };
-                var txRepository = new Repository<TransactionInfo>(_dbContext);
-                var savedUser = await txRepository.SaveAsync(newTransaction);
-
-                var newTransactionTo = new TransactionInfo() { UserId = data.UserIdTo, TransactionType = "IN", Amount = data.amount,txId="0", IsActive = false };
-                var txRepositoryTo = new Repository<TransactionInfo>(_dbContext);
-                var savedUserTo = await txRepositoryTo.SaveAsync(newTransactionTo);
-            }
-            catch (Exception ex) { ErrorMsg += ex.Message; }
+            decimal TransferAmt = data.amount;
 
             // Transaction Fee . . .
-            try
-            {
-                ErrorMsg+=TransactionFeeTransfer(data);
-            }
-            catch (Exception ex) { }
+            var FeeTransferMsg = "";
+            FeeTransferMsg = await TransactionFeeTransfer(data);
 
-            return JsonData(TransactionResp, ErrorMsg);
+            if (FeeTransferMsg == "success")
+            {
+
+                FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+                var Resp = await FG.CallApi_Response(EndPoints.Transaction, ApiMethods.Post, body);
+                if (Resp.IsSuccessStatusCode)
+                {
+                    string TransactionResp = await Resp.Content.ReadAsStringAsync();
+                    // Add Transaction Info . . .
+                    try
+                    {
+
+                        JObject transaction = JObject.Parse(TransactionResp);
+                        var txId = transaction["id"].ToString();
+
+                        var newTransaction = new TransactionInfo() { UserId = data.UserId, TransactionType = "OUT", Amount = TransferAmt, txId = txId, IsActive = true };
+                        var txRepository = new Repository<TransactionInfo>(_dbContext);
+                        var savedUser = await txRepository.SaveAsync(newTransaction);
+
+                        var newTransactionTo = new TransactionInfo() { UserId = data.UserIdTo, TransactionType = "IN", Amount = TransferAmt, txId = "0", IsActive = false };
+                        var txRepositoryTo = new Repository<TransactionInfo>(_dbContext);
+                        var savedUserTo = await txRepositoryTo.SaveAsync(newTransactionTo);
+                    }
+                    catch (Exception ex) { ErrorMsg += ex.Message; }
+
+                    return JsonData(TransactionResp, ErrorMsg);
+                }
+                else
+                {
+                    string responseBody = await Resp.Content.ReadAsStringAsync();
+                    var responseJson = await Resp.Content.ReadFromJsonAsync<JsonElement>();
+                    string FullResponse = $"API call failed with status code: {Resp.StatusCode}, Response body: {responseBody}";
+                    var TrnsaferMsg = responseJson.GetProperty("message").GetString() ?? FullResponse;
+                    Response.StatusCode = 202;
+                    return JsonData(null, TrnsaferMsg);
+                }
+
+            }
+            else
+            {
+                Response.StatusCode = 202;
+                return JsonData(null, FeeTransferMsg);
+            }
+
+            
 
         }
 
 
         public async Task<string> TransactionFeeTransfer(dynamic data)
         {
-            var TrnsaferMsg = "";
+            var TrnsaferMsg = String.Empty;
 
             try
             {
@@ -970,8 +990,8 @@ namespace WebApplication2.controllers
 
                 // Transfer .......
                 data.destination.type = "EXTERNAL_WALLET";
-                data.destination.id = "18dbc250-5997-48b3-8987-95ff851b835a";
-                //data.destination.oneTimeAddress.address = "0xe32CA17AAA9391eb0c22513b9A2509Cf6562A629";
+                //data.destination.id = "18dbc250-5997-48b3-8987-95ff851b835a";
+                data.destination.id = "58de9a31-b042-4b36-bca4-a9c37d5bb129";
                 data.amount = ETHFee;
 
                 string reversedJson = data.ToString();
@@ -979,11 +999,23 @@ namespace WebApplication2.controllers
                 JsonElement reversedElement = reversedBody.RootElement;
 
                 FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-                var TransactionResp = await FG.CallApi_String(EndPoints.Transaction, ApiMethods.Post, reversedElement);
-                TrnsaferMsg += TrnsaferMsg;
-                return TrnsaferMsg;
+                var TransactionResp = await FG.CallApi_Response(EndPoints.Transaction, ApiMethods.Post, reversedElement);
+                if (TransactionResp.IsSuccessStatusCode)
+                {
+                    TrnsaferMsg= "success";
+                }
+                else
+                {
+                    string responseBody = await TransactionResp.Content.ReadAsStringAsync();
+                    var responseJson = await TransactionResp.Content.ReadFromJsonAsync<JsonElement>();
+                    string FullResponse = $"API call failed with status code: {TransactionResp.StatusCode}, Response body: {responseBody}";
+                    TrnsaferMsg = responseJson.GetProperty("message").GetString() ?? FullResponse;
+                }
 
-            } catch (Exception ex) { TrnsaferMsg += ex.Message; return TrnsaferMsg; }  
+                return await Task.FromResult(TrnsaferMsg);
+
+
+            } catch (Exception ex) { TrnsaferMsg = ex.Message;  return await Task.FromResult(TrnsaferMsg); }  
         }
 
         // Get Convertion Rate

@@ -138,6 +138,30 @@ public class RestApiClient
         return responseBody;
     }
 
+
+    public async Task<HttpResponseMessage> GetAsync_Response(string endpoint, string authorizationToken, string headerName, string headerValue)
+    {
+        AddAuthorizationHeader(authorizationToken);
+        AddCustomHeader(headerName, headerValue);
+
+        HttpResponseMessage response = await httpClient.GetAsync(endpoint);
+
+        return response;
+    }
+
+    public async Task<HttpResponseMessage> PostAsync_Response(string endpoint, string authorizationToken, string headerName, string headerValue, string body)
+    {
+        AddAuthorizationHeader(authorizationToken);
+        AddCustomHeader(headerName, headerValue);
+
+        HttpContent content = new StringContent(body);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
+        
+        return response;
+    }
+
     private void AddAuthorizationHeader(string authorizationToken)
     {
         if (!string.IsNullOrEmpty(authorizationToken))
