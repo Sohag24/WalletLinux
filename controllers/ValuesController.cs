@@ -954,14 +954,14 @@ namespace WebApplication2.controllers
                     string FullResponse = $"API call failed with status code: {Resp.StatusCode}, Response body: {responseBody}";
                     var TrnsaferMsg = responseJson.GetProperty("message").GetString() ?? FullResponse;
                     Response.StatusCode = 500;
-                    return JsonData(null, TrnsaferMsg);
+                    return JsonData(null, "Transfer Failed : " + TrnsaferMsg);
                 }
 
             }
             else
             {
                 Response.StatusCode = 500;
-                return JsonData(null, FeeTransferMsg);
+                return JsonData(null, "Fee Transfer Failed : "+FeeTransferMsg);
             }
 
             
