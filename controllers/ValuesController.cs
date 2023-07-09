@@ -953,14 +953,14 @@ namespace WebApplication2.controllers
                     var responseJson = await Resp.Content.ReadFromJsonAsync<JsonElement>();
                     string FullResponse = $"API call failed with status code: {Resp.StatusCode}, Response body: {responseBody}";
                     var TrnsaferMsg = responseJson.GetProperty("message").GetString() ?? FullResponse;
-                    Response.StatusCode = 202;
+                    Response.StatusCode = 500;
                     return JsonData(null, TrnsaferMsg);
                 }
 
             }
             else
             {
-                Response.StatusCode = 202;
+                Response.StatusCode = 500;
                 return JsonData(null, FeeTransferMsg);
             }
 
