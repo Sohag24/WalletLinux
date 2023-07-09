@@ -983,7 +983,7 @@ namespace WebApplication2.controllers
                 if (Rate != 0)
                 {
                     decimal DollarAmount = Rate * Amount;
-                    decimal Fee = (1 / 100) * DollarAmount;
+                    decimal Fee = ( (decimal)0.01 * DollarAmount );
                     if (DollarAmount < 500)
                     {
                         Fee = Fee + (decimal)0.5;
@@ -993,7 +993,7 @@ namespace WebApplication2.controllers
                 else
                 {
                     decimal DollarAmount = Amount;
-                    decimal Fee = (1 / 100) * DollarAmount;
+                    decimal Fee = ( (decimal)0.01 * DollarAmount );
                     if (DollarAmount < 500)
                     {
                         Fee = Fee + (decimal)0.5;
