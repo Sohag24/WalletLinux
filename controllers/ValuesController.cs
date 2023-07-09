@@ -979,14 +979,27 @@ namespace WebApplication2.controllers
                 decimal Amount = data.amount;
                 string assetId= data.assetId;
                 decimal Rate = GetRate(assetId);
-                decimal DollarAmount = Rate * Amount;
-                decimal Fee = (1 / 100) * DollarAmount;
-                if (DollarAmount < 500)
+                decimal ETHFee = 0;
+                if (Rate != 0)
                 {
-                    Fee = Fee + (decimal)0.5;
+                    decimal DollarAmount = Rate * Amount;
+                    decimal Fee = (1 / 100) * DollarAmount;
+                    if (DollarAmount < 500)
+                    {
+                        Fee = Fee + (decimal)0.5;
+                    }
+                    ETHFee = (1 / Rate) * Fee;
                 }
-
-                decimal ETHFee = (1 / Rate) * Fee;
+                else
+                {
+                    decimal DollarAmount = Amount;
+                    decimal Fee = (1 / 100) * DollarAmount;
+                    if (DollarAmount < 500)
+                    {
+                        Fee = Fee + (decimal)0.5;
+                    }
+                    ETHFee =  Fee;
+                }
 
                 // Transfer .......
                 data.destination.type = "EXTERNAL_WALLET";
