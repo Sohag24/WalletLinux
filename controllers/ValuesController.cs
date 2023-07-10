@@ -514,7 +514,7 @@ namespace WebApplication2.controllers
         }
 
         [HttpPost("GetActiveTransactions")]
-        public async Task<IActionResult> GetActiveTransactions([FromBody] JsonElement body)
+        public async Task<string> GetActiveTransactions([FromBody] JsonElement body)
         {
             string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
             dynamic data = JObject.Parse(BodyStr);
@@ -523,7 +523,7 @@ namespace WebApplication2.controllers
             string endPoint = EndPoints.Transactions + QueryString;
             JsonElement EmptyJson = new JsonElement();
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            var transactionResp= await FG.CallApi(endPoint, ApiMethods.Get, EmptyJson);
+            var transactionResp= await FG.CallApi_String(endPoint, ApiMethods.Get, EmptyJson);
 
             // Get Active transaction ID from DB
             var transactionRepository = new Repository<TransactionInfo>(_dbContext);
@@ -534,10 +534,10 @@ namespace WebApplication2.controllers
             // If there are active transactions
             if (ActiveTransactions != null)
             {
-                var jsonDatas = ((dynamic)transactionResp.Value).data;
+                //var jsonDatas = ((dynamic)transactionResp.Value).data;
                
                 // Deserialize the JSON object
-                List<dynamic> rootObject = JsonConvert.DeserializeObject<List<dynamic>>(jsonDatas);
+                List<dynamic> rootObject = JsonConvert.DeserializeObject<List<dynamic>>(transactionResp);
 
                 // Join the JSON object with the active transactions
                 //List<dynamic> filteredRootObject = rootObject.Join(
@@ -559,7 +559,7 @@ namespace WebApplication2.controllers
                 string filteredJson = JsonConvert.SerializeObject(filteredRootObject, Formatting.Indented);
 
                 // Return the filtered JSON object
-                return JsonData(filteredJson,null);
+                return filteredJson;
 
             }
             else
