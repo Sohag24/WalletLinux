@@ -184,22 +184,33 @@ namespace WebApplication2.controllers
 
             // Create Vault in Fireblocks
             FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            var response = await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
+            //var response = await FG.CallApi(EndPoints.VaultCreate, ApiMethods.Post, body);
 
+            var response = await FG.CallApi_Response(EndPoints.VaultCreate, ApiMethods.Post, body);
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string FullResponse = $"API call failed with status code: {response.StatusCode}, Response body: {responseBody}";
+                string messageValue = responseJson.GetProperty("message").GetString() ?? FullResponse;
+                return JsonData(null, messageValue);
+            }
 
             // Add Vault Info . . .
             try
             {
-              
-                string jsonString = JsonConvert.SerializeObject(response.Value);
-                dynamic responseData = JObject.Parse(jsonString);
-
-                if (responseData.data != null)
+                dynamic responseData = JObject.Parse(responseBody);
+                
+                if (responseData != null)
                 {
 
-                    int VaultId = responseData.data.id;
+                    int VaultId = responseData.id;
 
-                    var newVault = new VaultInfo() { VaultId = VaultId, UserId = data.userId, Tag = 0, Category = 0 };
+                    bool IsVisibleToSubuser = data.IsVisibleToSubuser ?? true;
+
+                    var newVault = new VaultInfo() { VaultId = VaultId, UserId = data.userId, IsVisibleToSubuser= IsVisibleToSubuser, Tag = 0, Category = 0 };
                     var VaultRepository = new Repository<VaultInfo>(_dbContext);
                     var savedVault = await VaultRepository.SaveAsync(newVault);
 
@@ -237,15 +248,80 @@ namespace WebApplication2.controllers
             }
             catch (Exception ex) { }
 
-            return response;
+            return JsonData(responseJson, null);
+        }
+
+
+        [HttpPost("SetIsVisibleToSubuser")]
+        public async Task<bool> SetIsVisibleToSubuser([FromBody] JsonElement body)
+        {
+            string BodyStr = System.Text.Json.JsonSerializer.Serialize(body);
+            dynamic data = JObject.Parse(BodyStr);
+
+            var vaultAccountId = data.vaultAccountId??0;
+            var IsVisibleToSubuserValue = data.IsVisibleToSubuser??false;
+
+            var upRepository = new Repository<VaultInfo>(_dbContext);
+
+            var sql = "update VaultInfo set IsVisibleToSubuser='"+ IsVisibleToSubuserValue + "' where VaultId='" + vaultAccountId + "'";
+        
+            return await upRepository.ExecuteSQL(sql);
         }
 
         [HttpGet("GetVaults")]
         public async Task<IActionResult> GetVaults()
         {
             JsonElement EmptyJson = new JsonElement();
-            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
-            return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);         
+            FireBlocks_GateWay FGs = new FireBlocks_GateWay(_configuration);
+            //return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
+
+            string userId = HttpContext.Request.Query["userId"];
+            //string isSubUser = HttpContext.Request.Query["isSubUser"];
+
+            var jsons = await FGs.CallApi_String(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
+
+            // Deserialize the JSON string into RootObject
+            Vaults rootObject = JsonConvert.DeserializeObject<Vaults>(jsons);
+
+            // Create a new RootObject with filtered accounts
+            VaultsExtended filteredRootObject = new VaultsExtended
+            {
+                Accounts = rootObject.Accounts
+                  .Where(a=>a.CustomerRefId== userId || userId==null)
+                    .Select(account =>
+                    {
+                        bool isVisibleToSubuser = GetIsVisibleToSubuserFromDb(account.Id);
+                       
+                        return new AccountExtended
+                        {
+                            Id = account.Id,
+                            Name = account.Name,
+                            HiddenOnUI = account.HiddenOnUI,
+                            AutoFuel = account.AutoFuel,
+                            CustomerRefId= account.CustomerRefId,
+                            IsVisibleToSubuser = isVisibleToSubuser,
+                            Assets = account.Assets
+                        };
+                            
+                    })
+                    .ToArray()
+
+            };
+
+            return JsonData(filteredRootObject,null);
+        }
+
+        public bool GetIsVisibleToSubuserFromDb(string vaultId)
+        {
+            try
+            {
+                int vaultsId=Convert.ToInt32(vaultId);
+                var Repository = new Repository<VaultInfo>(_dbContext);
+                var Info = Repository.GetAllAsync().Result;
+                var Data = Info.Where(d => d.VaultId == vaultsId).FirstOrDefault();
+                return Data==null?true:Data.IsVisibleToSubuser??true;
+
+            } catch { return true; }
         }
 
         [HttpPost("GetAssetPercentage")]

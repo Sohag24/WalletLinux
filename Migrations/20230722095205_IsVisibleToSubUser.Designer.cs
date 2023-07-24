@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WalletApp.Model;
 
@@ -10,9 +11,11 @@ using WalletApp.Model;
 namespace WalletApp.Migrations
 {
     [DbContext(typeof(DBClass))]
-    partial class DBClassModelSnapshot : ModelSnapshot
+    [Migration("20230722095205_IsVisibleToSubUser")]
+    partial class IsVisibleToSubUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
