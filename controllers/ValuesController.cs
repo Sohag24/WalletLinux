@@ -272,9 +272,9 @@ namespace WebApplication2.controllers
         public async Task<IActionResult> GetVaults()
         {
             JsonElement EmptyJson = new JsonElement();
-            FireBlocks_GateWay FGs = new FireBlocks_GateWay(_configuration);
-            //return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
-
+            FireBlocks_GateWay FG = new FireBlocks_GateWay(_configuration);
+            return await FG.CallApi(EndPoints.VaultAccounts, ApiMethods.Get, EmptyJson);
+            /*
             string userId = HttpContext.Request.Query["userId"];
             //string isSubUser = HttpContext.Request.Query["isSubUser"];
 
@@ -309,6 +309,7 @@ namespace WebApplication2.controllers
             };
 
             return JsonData(filteredRootObject,null);
+            */
         }
 
         public bool GetIsVisibleToSubuserFromDb(string vaultId)
